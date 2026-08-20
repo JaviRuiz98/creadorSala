@@ -1,0 +1,1 @@
+import { defineConfig } from '@playwright/test'; export default defineConfig({testDir:'e2e',webServer:{command:'npm start -- --host 127.0.0.1',url:'http://127.0.0.1:4200/discoteca/',reuseExistingServer:true},use:{baseURL:'http://127.0.0.1:4200/discoteca/'}});

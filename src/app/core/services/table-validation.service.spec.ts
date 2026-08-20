@@ -1,0 +1,2 @@
+import { TestBed } from '@angular/core/testing'; import { TableValidationService } from './table-validation.service';
+describe('TableValidationService',()=>{let s:TableValidationService;beforeEach(()=>s=TestBed.inject(TableValidationService));it('rejects duplicate numbers',()=>expect(s.validateUniqueNumbers([{number:1},{number:1}] as any)).toBe(false));it('clamps logical coordinates',()=>expect(s.clampPosition({x:-10,y:900,width:100,height:100} as any,500,500)).toMatchObject({x:0,y:400}));});
