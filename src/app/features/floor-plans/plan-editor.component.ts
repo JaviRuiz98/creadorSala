@@ -54,23 +54,77 @@ type EditorTool =
   | 'text';
 
 
+/*
+ * ============================================================
+ * RESERVADO
+ * ============================================================
+ *
+ * Los reservados se mantienen como una entidad independiente
+ * de las mesas.
+ *
+ * Si ya tienes ClubReserved en models.ts puedes sustituir este
+ * tipo por el import correspondiente.
+ */
+
+interface ClubReserved {
+
+  id: string;
+
+  floor_plan_id: string;
+
+  number: number;
+
+  x: number;
+
+  y: number;
+
+  width: number;
+
+  height: number;
+
+  rotation: number;
+
+  shape:
+    | 'circle'
+    | 'rect';
+
+  created_at: string;
+
+  updated_at: string;
+
+}
+
+
 @Component({
+
   selector: 'app-plan-editor',
 
   standalone: true,
 
   imports: [
+
     CommonModule,
+
     FormsModule,
+
     IonButton,
+
     IonButtons,
+
     IonIcon,
+
     IonInput,
+
     IonItem,
+
     IonLabel,
+
     IonList,
+
     IonSelect,
+
     IonSelectOption
+
   ],
 
   template: `
@@ -154,7 +208,8 @@ type EditorTool =
               (click)="deleteSelected()"
               [disabled]="
                 !selectedElementId &&
-                !selectedTable
+                !selectedTable &&
+                !selectedReserved
               ">
 
               🧹 Borrar
@@ -179,6 +234,16 @@ type EditorTool =
               (click)="addTable()">
 
               + Mesa
+
+            </ion-button>
+
+
+            <ion-button
+              class="editor-button reserved-button"
+              size="small"
+              (click)="addReserved()">
+
+              + Reservado
 
             </ion-button>
 
@@ -262,6 +327,18 @@ type EditorTool =
 
             }
 
+
+            @if (selectedReserved) {
+
+              <span class="selected-status">
+
+                · Reservado
+                {{ selectedReserved.number }}
+
+              </span>
+
+            }
+
           </span>
 
         }
@@ -333,6 +410,7 @@ type EditorTool =
         (pointermove)="pointerMove($event)"
         (pointerup)="pointerUp($event)"
         (pointercancel)="pointerUp($event)">
+
       </div>
 
 
@@ -373,10 +451,15 @@ type EditorTool =
                 <ion-label>
 
                   <h3>
+
                     {{ item.product.name }}
+
                     ×
+
                     {{ item.quantity }}
+
                   </h3>
+
 
                   <p>
 
@@ -599,8 +682,8 @@ type EditorTool =
       }
 
     </div>
-  `,
 
+  `,
 
   styles: [`
 
@@ -776,6 +859,24 @@ type EditorTool =
       --background: #f8e8e5;
 
       --color: #783333;
+
+    }
+
+
+    .editor-button.reserved-button {
+
+      --background: #7a4b2e;
+
+      --color: #ffffff;
+
+      --border-color: #7a4b2e;
+
+    }
+
+
+    .editor-button.reserved-button:hover {
+
+      --background: #653c24;
 
     }
 
@@ -1269,18 +1370,22 @@ type EditorTool =
     }
 
   `]
+
 })
 
 
 export class PlanEditorComponent
+
   implements OnChanges, OnDestroy {
 
 
   @Input({ required: true })
+
   plan!: FloorPlan;
 
 
   @Input()
+
   mode:
     'editor' |
     'operativo' =
@@ -1288,6 +1393,7 @@ export class PlanEditorComponent
 
 
   @Output()
+
   pendingChanged =
     new EventEmitter<number>();
 
@@ -1296,6 +1402,7 @@ export class PlanEditorComponent
     'container',
     { static: true }
   )
+
   container!: ElementRef<HTMLDivElement>;
 
 
@@ -1333,10 +1440,19 @@ export class PlanEditorComponent
   tables:
     ClubTable[] = [];
 
+  reserved:
+    ClubReserved[] = [];
+
+
+  /* =========================================================
+     SELECTION
+     ========================================================= */
 
   selectedTable:
     ClubTable | null = null;
 
+  selectedReserved:
+    ClubReserved | null = null;
 
   selectedElementId:
     string | null = null;
@@ -1639,8 +1755,8 @@ export class PlanEditorComponent
 
 
     /*
-     * Mantenemos también x/y
-     * sincronizados con el primer punto.
+     * x/y representan el primer
+     * punto de la línea.
      */
 
     e.x =
@@ -1649,11 +1765,6 @@ export class PlanEditorComponent
     e.y =
       e.points[1];
 
-
-    /*
-     * Actualizamos width y height
-     * para mantener consistencia.
-     */
 
     const endpoints =
       this.getLineEndpoints(e);
@@ -1670,6 +1781,52 @@ export class PlanEditorComponent
         endpoints.start.y;
 
     }
+
+
+    e.updated_at =
+      new Date()
+        .toISOString();
+
+  }
+
+
+  /* =========================================================
+     MOVE WHOLE LINE
+     * ========================================================= */
+
+  private moveLine(
+    e: FloorPlanElement,
+    dx: number,
+    dy: number
+  ) {
+
+    if (
+      e.points &&
+      e.points.length >= 2
+    ) {
+
+      e.points =
+        e.points.map(
+          (
+            value,
+            index
+          ) =>
+            value +
+            (
+              index % 2 === 0
+                ? dx
+                : dy
+            )
+        );
+
+    }
+
+
+    e.x +=
+      dx;
+
+    e.y +=
+      dy;
 
 
     e.updated_at =
@@ -1699,7 +1856,21 @@ export class PlanEditorComponent
       snap.tables;
 
 
+    /*
+     * Reservados independientes
+     * de las mesas.
+     */
+
+    this.reserved =
+      (snap as any).reserved ??
+      [];
+
+
     this.selectedTable =
+      null;
+
+
+    this.selectedReserved =
       null;
 
 
@@ -1824,7 +1995,8 @@ export class PlanEditorComponent
 
         e.evt.preventDefault();
 
-        this.zoom(
+        this.zoomAtPointer(
+          e.evt as WheelEvent,
           e.evt.deltaY < 0
             ? 0.1
             : -0.1
@@ -1855,11 +2027,6 @@ export class PlanEditorComponent
     this.layer.destroyChildren();
 
 
-    /*
-     * Evitamos que quede un extremo
-     * antiguo activo después de renderizar.
-     */
-
     this.activeEndpoint =
       null;
 
@@ -1877,10 +2044,6 @@ export class PlanEditorComponent
 
       /*
        * TEXTO
-       *
-       * FloorElementKind no contempla
-       * necesariamente "text", por lo que
-       * hacemos la comparación como string.
        */
 
       if (
@@ -1888,7 +2051,8 @@ export class PlanEditorComponent
       ) {
 
         const selected =
-          this.selectedElementId === e.id;
+          this.selectedElementId ===
+          e.id;
 
 
         const text =
@@ -1976,6 +2140,10 @@ export class PlanEditorComponent
 
 
             this.selectedTable =
+              null;
+
+
+            this.selectedReserved =
               null;
 
 
@@ -2107,6 +2275,10 @@ export class PlanEditorComponent
             null;
 
 
+          this.selectedReserved =
+            null;
+
+
           this.activeEndpoint =
             null;
 
@@ -2126,14 +2298,19 @@ export class PlanEditorComponent
         () => {
 
           /*
-           * Si se estaba arrastrando un extremo,
-           * este evento no debe modificar toda
-           * la línea.
+           * Los extremos tienen su propio
+           * drag y nunca deben llegar aquí
+           * como movimiento de línea completa.
            */
 
           if (
             this.activeEndpoint
           ) {
+
+            line.position({
+              x: 0,
+              y: 0
+            });
 
             return;
 
@@ -2143,15 +2320,9 @@ export class PlanEditorComponent
           const dx =
             line.x();
 
-
           const dy =
             line.y();
 
-
-          /*
-           * Si no se ha movido realmente,
-           * no hacemos nada.
-           */
 
           if (
             dx === 0 &&
@@ -2164,55 +2335,23 @@ export class PlanEditorComponent
 
 
           /*
-           * Movemos TODOS los puntos.
-           */
-
-          if (
-            e.points &&
-            e.points.length >= 2
-          ) {
-
-            e.points =
-              e.points.map(
-                (
-                  value,
-                  index
-                ) =>
-                  value +
-                  (
-                    index % 2 === 0
-                      ? dx
-                      : dy
-                  )
-              );
-
-          }
-
-
-          /*
-           * Actualizamos las coordenadas
-           * principales del elemento.
-           */
-
-          e.x +=
-            dx;
-
-          e.y +=
-            dy;
-
-
-          e.updated_at =
-            new Date()
-              .toISOString();
-
-
-          /*
-           * Muy importante:
+           * Movemos todos los puntos.
            *
+           * El otro extremo permanece
+           * a la misma distancia respecto
+           * del primero.
+           */
+
+          this.moveLine(
+            e,
+            dx,
+            dy
+          );
+
+
+          /*
            * Los puntos ya contienen el
-           * desplazamiento, así que
-           * reiniciamos la posición de
-           * Konva.
+           * desplazamiento.
            */
 
           line.position({
@@ -2287,11 +2426,6 @@ export class PlanEditorComponent
             });
 
 
-          /*
-           * Evita que al tocar el extremo
-           * se arrastre también la línea.
-           */
-
           startCircle.on(
             'mousedown touchstart',
             (event) => {
@@ -2332,8 +2466,8 @@ export class PlanEditorComponent
 
 
               const point =
-                this.getKonvaAbsolutePoint(
-                  startCircle
+                this.getStagePointerPoint(
+                  event.evt
                 );
 
 
@@ -2351,27 +2485,18 @@ export class PlanEditorComponent
               );
 
 
-              /*
-               * Actualizamos visualmente
-               * la línea sin reconstruir
-               * todo el canvas.
-               */
-
               line.points(
                 e.points ?? []
               );
 
 
-              /*
-               * Movemos el extremo final
-               * independientemente.
-               */
-
               startCircle.position({
 
-                x: point.x,
+                x:
+                  point.x,
 
-                y: point.y
+                y:
+                  point.y
 
               });
 
@@ -2391,8 +2516,8 @@ export class PlanEditorComponent
 
 
               const point =
-                this.getKonvaAbsolutePoint(
-                  startCircle
+                this.getStagePointerPoint(
+                  event.evt
                 );
 
 
@@ -2497,8 +2622,8 @@ export class PlanEditorComponent
 
 
               const point =
-                this.getKonvaAbsolutePoint(
-                  endCircle
+                this.getStagePointerPoint(
+                  event.evt
                 );
 
 
@@ -2523,9 +2648,11 @@ export class PlanEditorComponent
 
               endCircle.position({
 
-                x: point.x,
+                x:
+                  point.x,
 
-                y: point.y
+                y:
+                  point.y
 
               });
 
@@ -2545,8 +2672,8 @@ export class PlanEditorComponent
 
 
               const point =
-                this.getKonvaAbsolutePoint(
-                  endCircle
+                this.getStagePointerPoint(
+                  event.evt
                 );
 
 
@@ -2578,9 +2705,8 @@ export class PlanEditorComponent
 
 
           /*
-           * Añadimos los extremos
-           * DESPUÉS de la línea para
-           * que estén visualmente encima.
+           * Los extremos quedan encima
+           * de la línea.
            */
 
           this.layer.add(
@@ -2592,11 +2718,6 @@ export class PlanEditorComponent
             endCircle
           );
 
-
-          /*
-           * Guardamos referencia al
-           * último extremo creado.
-           */
 
           this.endpointShape =
             endCircle;
@@ -2651,198 +2772,20 @@ export class PlanEditorComponent
       const t of this.tables
     ) {
 
-      const active =
-        this.selectedTable?.id ===
-        t.id;
+      this.renderTable(t);
 
+    }
 
-      const hasPending =
-        this.mode ===
-          'operativo' &&
-        this.pendingForTable(
-          t.id
-        ) > 0;
 
+    /* =======================================================
+       RESERVADOS
+       ======================================================= */
 
-      const common = {
+    for (
+      const r of this.reserved
+    ) {
 
-        x:
-          t.x,
-
-        y:
-          t.y,
-
-        rotation:
-          t.rotation,
-
-        draggable:
-          this.mode ===
-            'editor' &&
-          this.tool ===
-            'select',
-
-        name:
-          t.id,
-
-        fill:
-          hasPending
-            ? '#9f2f3a'
-            : active
-              ? '#704936'
-              : '#f3e9e2',
-
-        stroke:
-          hasPending
-            ? '#ff5964'
-            : active
-              ? '#704936'
-              : '#765744',
-
-        strokeWidth:
-          active
-            ? 4
-            : 3
-
-      };
-
-
-      const shape:
-        Konva.Shape =
-
-        t.shape === 'circle'
-
-          ?
-
-          new Konva.Circle({
-
-            ...common,
-
-            radius:
-              Math.min(
-                t.width,
-                t.height
-              ) / 2
-
-          })
-
-          :
-
-          new Konva.Rect({
-
-            ...common,
-
-            width:
-              t.width,
-
-            height:
-              t.height,
-
-            cornerRadius:
-              10
-
-          });
-
-
-      /*
-       * SELECCIONAR MESA
-       */
-
-      shape.on(
-        'click tap',
-        (event) => {
-
-          event.cancelBubble =
-            true;
-
-
-          this.selectTable(t);
-
-        }
-      );
-
-
-      /*
-       * MOVER MESA
-       */
-
-      shape.on(
-        'dragend',
-        () => {
-
-          t.x =
-            shape.x();
-
-          t.y =
-            shape.y();
-
-
-          t.updated_at =
-            new Date()
-              .toISOString();
-
-
-          this.selectedElementId =
-            null;
-
-
-          this.pushHistory();
-
-          this.render();
-
-        }
-      );
-
-
-      this.layer.add(
-        shape
-      );
-
-
-      /*
-       * NUMERO
-       */
-
-      this.layer.add(
-
-        new Konva.Text({
-
-          x:
-            t.x -
-            (
-              t.shape === 'circle'
-                ? 20
-                : 0
-            ),
-
-          y:
-            t.y - 8,
-
-          text:
-            `${t.number}`,
-
-          fill:
-            hasPending ||
-            active
-              ? '#ffffff'
-              : '#4d3326',
-
-          fontSize:
-            18,
-
-          fontStyle:
-            'bold',
-
-          width:
-            t.shape === 'circle'
-              ? 40
-              : t.width,
-
-          align:
-            'center'
-
-        })
-
-      );
+      this.renderReserved(r);
 
     }
 
@@ -2853,11 +2796,429 @@ export class PlanEditorComponent
 
 
   /* =========================================================
+     RENDER TABLE
+     ========================================================= */
+
+  private renderTable(
+    t: ClubTable
+  ) {
+
+    const active =
+      this.selectedTable?.id ===
+      t.id;
+
+
+    const hasPending =
+      this.mode ===
+        'operativo' &&
+      this.pendingForTable(
+        t.id
+      ) > 0;
+
+
+    /*
+     * MESAS NEGRAS
+     */
+
+    const common = {
+
+      x:
+        t.x,
+
+      y:
+        t.y,
+
+      rotation:
+        t.rotation,
+
+      draggable:
+        this.mode ===
+          'editor' &&
+        this.tool ===
+          'select',
+
+      name:
+        t.id,
+
+      fill:
+        hasPending
+          ? '#9f2f3a'
+          : '#111111',
+
+      stroke:
+        active
+          ? '#704936'
+          : '#000000',
+
+      strokeWidth:
+        active
+          ? 4
+          : 3
+
+    };
+
+
+    const shape:
+      Konva.Shape =
+
+      t.shape === 'circle'
+
+        ?
+
+        new Konva.Circle({
+
+          ...common,
+
+          radius:
+            Math.min(
+              t.width,
+              t.height
+            ) / 2
+
+        })
+
+        :
+
+        new Konva.Rect({
+
+          ...common,
+
+          width:
+            t.width,
+
+          height:
+            t.height,
+
+          cornerRadius:
+            10
+
+        });
+
+
+    /*
+     * SELECCIONAR
+     */
+
+    shape.on(
+      'click tap',
+      (event) => {
+
+        event.cancelBubble =
+          true;
+
+
+        this.selectTable(t);
+
+      }
+    );
+
+
+    /*
+     * MOVER
+     */
+
+    shape.on(
+      'dragend',
+      () => {
+
+        if (
+          this.mode !==
+          'editor'
+        ) {
+
+          return;
+
+        }
+
+
+        t.x =
+          shape.x();
+
+        t.y =
+          shape.y();
+
+
+        t.updated_at =
+          new Date()
+            .toISOString();
+
+
+        this.selectedElementId =
+          null;
+
+        this.selectedReserved =
+          null;
+
+
+        this.pushHistory();
+
+        this.render();
+
+      }
+    );
+
+
+    this.layer.add(
+      shape
+    );
+
+
+    /*
+     * NUMERO
+     */
+
+    this.layer.add(
+
+      new Konva.Text({
+
+        x:
+          t.shape === 'circle'
+            ? t.x - 20
+            : t.x,
+
+        y:
+          t.y - 8,
+
+        text:
+          `${t.number}`,
+
+        fill:
+          '#ffffff',
+
+        fontSize:
+          18,
+
+        fontStyle:
+          'bold',
+
+        width:
+          t.shape === 'circle'
+            ? 40
+            : t.width,
+
+        align:
+          'center',
+
+        listening:
+          false
+
+      })
+
+    );
+
+  }
+
+
+  /* =========================================================
+     RENDER RESERVED
+     ========================================================= */
+
+  private renderReserved(
+    r: ClubReserved
+  ) {
+
+    const active =
+      this.selectedReserved?.id ===
+      r.id;
+
+
+    /*
+     * RESERVADOS MARRONES
+     */
+
+    const common = {
+
+      x:
+        r.x,
+
+      y:
+        r.y,
+
+      rotation:
+        r.rotation,
+
+      draggable:
+        this.mode ===
+          'editor' &&
+        this.tool ===
+          'select',
+
+      name:
+        r.id,
+
+      fill:
+        '#704936',
+
+      stroke:
+        active
+          ? '#b88a69'
+          : '#4d2e1f',
+
+      strokeWidth:
+        active
+          ? 4
+          : 3
+
+    };
+
+
+    const shape:
+      Konva.Shape =
+
+      r.shape === 'circle'
+
+        ?
+
+        new Konva.Circle({
+
+          ...common,
+
+          radius:
+            Math.min(
+              r.width,
+              r.height
+            ) / 2
+
+        })
+
+        :
+
+        new Konva.Rect({
+
+          ...common,
+
+          width:
+            r.width,
+
+          height:
+            r.height,
+
+          cornerRadius:
+            10
+
+        });
+
+
+    /*
+     * SELECCIONAR RESERVADO
+     */
+
+    shape.on(
+      'click tap',
+      (event) => {
+
+        event.cancelBubble =
+          true;
+
+
+        this.selectReserved(r);
+
+      }
+    );
+
+
+    /*
+     * MOVER RESERVADO
+     */
+
+    shape.on(
+      'dragend',
+      () => {
+
+        if (
+          this.mode !==
+          'editor'
+        ) {
+
+          return;
+
+        }
+
+
+        r.x =
+          shape.x();
+
+        r.y =
+          shape.y();
+
+
+        r.updated_at =
+          new Date()
+            .toISOString();
+
+
+        this.selectedElementId =
+          null;
+
+        this.selectedTable =
+          null;
+
+
+        this.pushHistory();
+
+        this.render();
+
+      }
+    );
+
+
+    this.layer.add(
+      shape
+    );
+
+
+    /*
+     * NUMERO DEL RESERVADO
+     */
+
+    this.layer.add(
+
+      new Konva.Text({
+
+        x:
+          r.shape === 'circle'
+            ? r.x - 20
+            : r.x,
+
+        y:
+          r.y - 8,
+
+        text:
+          `${r.number}`,
+
+        fill:
+          '#ffffff',
+
+        fontSize:
+          18,
+
+        fontStyle:
+          'bold',
+
+        width:
+          r.shape === 'circle'
+            ? 40
+            : r.width,
+
+        align:
+          'center',
+
+        listening:
+          false
+
+      })
+
+    );
+
+  }
+
+
+  /* =========================================================
      KONVA POINT
      ========================================================= */
 
-  private getKonvaAbsolutePoint(
-    shape: Konva.Shape
+  private getStagePointerPoint(
+    event: Event
   ): Point | null {
 
     if (!this.stage) {
@@ -2867,8 +3228,20 @@ export class PlanEditorComponent
     }
 
 
-    const absolute =
-      shape.getAbsolutePosition();
+    this.stage.setPointersPositions(
+      event
+    );
+
+
+    const pointer =
+      this.stage.getPointerPosition();
+
+
+    if (!pointer) {
+
+      return null;
+
+    }
 
 
     const transform =
@@ -2881,7 +3254,22 @@ export class PlanEditorComponent
 
 
     return transform.point(
-      absolute
+      pointer
+    );
+
+  }
+
+
+  /* =========================================================
+     CANVAS POINT
+     ========================================================= */
+
+  private getCanvasPoint(
+    ev: PointerEvent
+  ): Point | null {
+
+    return this.getStagePointerPoint(
+      ev
     );
 
   }
@@ -2897,6 +3285,10 @@ export class PlanEditorComponent
 
     this.selectedTable =
       t;
+
+
+    this.selectedReserved =
+      null;
 
 
     this.selectedElementId =
@@ -2923,13 +3315,42 @@ export class PlanEditorComponent
 
 
   /* =========================================================
+     SELECT RESERVED
+     ========================================================= */
+
+  private selectReserved(
+    r: ClubReserved
+  ) {
+
+    this.selectedReserved =
+      r;
+
+
+    this.selectedTable =
+      null;
+
+
+    this.selectedElementId =
+      null;
+
+
+    this.activeEndpoint =
+      null;
+
+
+    this.render();
+
+  }
+
+
+  /* =========================================================
      DELETE
      ========================================================= */
 
   deleteSelected() {
 
     /*
-     * Elemento
+     * ELEMENTO
      */
 
     if (
@@ -2965,7 +3386,7 @@ export class PlanEditorComponent
 
 
     /*
-     * Mesa
+     * MESA
      */
 
     if (
@@ -2984,6 +3405,38 @@ export class PlanEditorComponent
 
 
       this.selectedTable =
+        null;
+
+
+      this.pushHistory();
+
+      this.render();
+
+      return;
+
+    }
+
+
+    /*
+     * RESERVADO
+     */
+
+    if (
+      this.selectedReserved
+    ) {
+
+      const reservedId =
+        this.selectedReserved.id;
+
+
+      this.reserved =
+        this.reserved.filter(
+          r =>
+            r.id !== reservedId
+        );
+
+
+      this.selectedReserved =
         null;
 
 
@@ -3170,6 +3623,9 @@ export class PlanEditorComponent
       this.selectedTable =
         null;
 
+      this.selectedReserved =
+        null;
+
     }
 
 
@@ -3183,48 +3639,6 @@ export class PlanEditorComponent
 
 
     this.render();
-
-  }
-
-
-  /* =========================================================
-     CANVAS POINT
-     ========================================================= */
-
-  private getCanvasPoint(
-    ev: PointerEvent
-  ): Point | null {
-
-    this.stage
-      .setPointersPositions(
-        ev
-      );
-
-
-    const pointer =
-      this.stage
-        .getPointerPosition();
-
-
-    if (!pointer) {
-
-      return null;
-
-    }
-
-
-    const transform =
-      this.stage
-        .getAbsoluteTransform()
-        .copy();
-
-
-    transform.invert();
-
-
-    return transform.point(
-      pointer
-    );
 
   }
 
@@ -3563,14 +3977,6 @@ export class PlanEditorComponent
         .toISOString();
 
 
-    /*
-     * El modelo actual de FloorPlanElement
-     * parece no incluir "text" en FloorElementKind.
-     *
-     * Por eso usamos un cast intermedio
-     * mediante unknown.
-     */
-
     const textElement =
       {
 
@@ -3630,6 +4036,10 @@ export class PlanEditorComponent
 
 
     this.selectedTable =
+      null;
+
+
+    this.selectedReserved =
       null;
 
 
@@ -3758,8 +4168,8 @@ export class PlanEditorComponent
     try {
 
       /*
-       * Si hay un dibujo sin convertir,
-       * lo convertimos automáticamente.
+       * Convertimos cualquier dibujo
+       * pendiente antes de guardar.
        */
 
       if (
@@ -3775,9 +4185,9 @@ export class PlanEditorComponent
       /*
        * Guardamos:
        *
-       * - paredes
-       * - textos
+       * - elementos
        * - mesas
+       * - reservados
        */
 
       await this.floors.saveSnapshot(
@@ -3790,16 +4200,15 @@ export class PlanEditorComponent
             this.elements,
 
           tables:
-            this.tables
+            this.tables,
 
-        }
+          reserved:
+            this.reserved
+
+        } as any
 
       );
 
-
-      /*
-       * Dialog de confirmación.
-       */
 
       this.showSaveDialog =
         true;
@@ -3843,6 +4252,11 @@ export class PlanEditorComponent
       );
 
 
+    /*
+     * Numeración independiente
+     * de los reservados.
+     */
+
     let n =
       1;
 
@@ -3861,11 +4275,123 @@ export class PlanEditorComponent
         .toISOString();
 
 
-    this.tables = [
+const table: ClubTable = {
 
-      ...this.tables,
+  id:
+    crypto.randomUUID(),
 
-      {
+  floor_plan_id:
+    this.plan.id,
+
+  number:
+    n,
+
+  type:
+    'TABLE',
+
+  x:
+    300 +
+    this.tables.length *
+    20,
+
+  y:
+    300 +
+    this.tables.length *
+    20,
+
+  width:
+    100,
+
+  height:
+    80,
+
+  rotation:
+    0,
+
+  shape:
+    'circle',
+
+  created_at:
+    now,
+
+  updated_at:
+    now
+
+};
+
+this.tables = [
+
+  ...this.tables,
+
+  table
+
+];
+
+
+
+    this.selectedTable =
+      table;
+
+
+    this.selectedReserved =
+      null;
+
+
+    this.selectedElementId =
+      null;
+
+
+    this.pushHistory();
+
+
+    this.render();
+
+  }
+
+
+  /* =========================================================
+     ADD RESERVED
+     ========================================================= */
+
+  addReserved() {
+
+    const numbers =
+      new Set(
+        this.reserved.map(
+          r => r.number
+        )
+      );
+
+
+    /*
+     * Numeración independiente
+     * de las mesas.
+     *
+     * Reservado 1
+     * Reservado 2
+     * Reservado 3
+     */
+
+    let n =
+      1;
+
+
+    while (
+      numbers.has(n)
+    ) {
+
+      n++;
+
+    }
+
+
+    const now =
+      new Date()
+        .toISOString();
+
+
+    const reserved:
+      ClubReserved = {
 
         id:
           crypto.randomUUID(),
@@ -3878,16 +4404,16 @@ export class PlanEditorComponent
 
         x:
           300 +
-          this.tables.length *
+          this.reserved.length *
           20,
 
         y:
-          300 +
-          this.tables.length *
+          450 +
+          this.reserved.length *
           20,
 
         width:
-          100,
+          120,
 
         height:
           80,
@@ -3896,7 +4422,7 @@ export class PlanEditorComponent
           0,
 
         shape:
-          'circle',
+          'rect',
 
         created_at:
           now,
@@ -3904,9 +4430,28 @@ export class PlanEditorComponent
         updated_at:
           now
 
-      }
+      };
+
+
+    this.reserved = [
+
+      ...this.reserved,
+
+      reserved
 
     ];
+
+
+    this.selectedReserved =
+      reserved;
+
+
+    this.selectedTable =
+      null;
+
+
+    this.selectedElementId =
+      null;
 
 
     this.pushHistory();
@@ -3992,13 +4537,135 @@ export class PlanEditorComponent
 
 
   /* =========================================================
+     ZOOM AT POINTER
+     ========================================================= */
+
+  private zoomAtPointer(
+    event: WheelEvent,
+    delta: number
+  ) {
+
+    if (
+      !this.stage
+    ) {
+
+      return;
+
+    }
+
+
+    const oldScale =
+      this.stage.scaleX();
+
+
+    const pointer =
+      this.stage.getPointerPosition();
+
+
+    if (!pointer) {
+
+      this.zoom(delta);
+
+      return;
+
+    }
+
+
+    const newScale =
+      Math.min(
+
+        2.5,
+
+        Math.max(
+
+          0.35,
+
+          oldScale +
+          delta
+
+        )
+
+      );
+
+
+    /*
+     * Punto del plano que está
+     * debajo del cursor.
+     */
+
+    const mousePointTo =
+      {
+
+        x:
+          (
+            pointer.x -
+            this.stage.x()
+          ) /
+          oldScale,
+
+        y:
+          (
+            pointer.y -
+            this.stage.y()
+          ) /
+          oldScale
+
+      };
+
+
+    this.stage.scale({
+
+      x:
+        newScale,
+
+      y:
+        newScale
+
+    });
+
+
+    /*
+     * Conservamos ese punto
+     * debajo del cursor.
+     */
+
+    this.stage.position({
+
+      x:
+        pointer.x -
+        mousePointTo.x *
+        newScale,
+
+      y:
+        pointer.y -
+        mousePointTo.y *
+        newScale
+
+    });
+
+
+    this.render();
+
+  }
+
+
+  /* =========================================================
      HISTORY
      ========================================================= */
 
   pushHistory() {
 
+    /*
+     * FloorSnapshot puede no tener todavía
+     * "reserved" en el modelo antiguo.
+     *
+     * Lo incluimos igualmente para que
+     * undo/redo mantenga los reservados.
+     */
+
     const snapshot:
-      FloorSnapshot = {
+      FloorSnapshot =
+      {
 
         elements:
           structuredClone(
@@ -4008,9 +4675,14 @@ export class PlanEditorComponent
         tables:
           structuredClone(
             this.tables
+          ),
+
+        reserved:
+          structuredClone(
+            this.reserved
           )
 
-      };
+      } as any;
 
 
     this.history =
@@ -4066,11 +4738,22 @@ export class PlanEditorComponent
       );
 
 
+    this.reserved =
+      structuredClone(
+        (s as any).reserved ??
+        []
+      );
+
+
     this.selectedElementId =
       null;
 
 
     this.selectedTable =
+      null;
+
+
+    this.selectedReserved =
       null;
 
 
