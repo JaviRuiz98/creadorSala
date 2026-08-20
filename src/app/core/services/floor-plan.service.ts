@@ -108,20 +108,6 @@ export class FloorPlanService {
   }
 
 
-  /**
-   * Carga el plano completo.
-   *
-   * Las mesas y los reservados se almacenan
-   * en la misma tabla "tables".
-   *
-   * La diferencia entre ambos está en:
-   *
-   * type = 'TABLE'
-   * type = 'RESERVED'
-   *
-   * Por tanto, ambos se cargan juntos en
-   * snapshot.tables.
-   */
   async load(
     planId: string
   ): Promise<FloorSnapshot> {
@@ -162,20 +148,7 @@ export class FloorPlanService {
     }
 
 
-    /*
-     * IMPORTANTE:
-     *
-     * No filtramos por type.
-     *
-     * Aquí entran tanto:
-     *
-     * TABLE
-     * RESERVED
-     *
-     * El componente PlanEditor será el encargado
-     * de distinguirlos mediante t.type.
-     */
-    const tables =
+    const allTables =
       (tablesResult.data ?? []) as ClubTable[];
 
 
@@ -184,28 +157,57 @@ export class FloorPlanService {
       elements:
         elementsResult.data as FloorPlanElement[],
 
-      tables
+      /*
+       * La tabla de Supabase contiene tanto
+       * mesas normales como reservados.
+       *
+       * Separamos ambos tipos para que el
+       * componente pueda trabajar con ellos
+       * independientemente.
+       */
+      tables:
+        allTables.filter(
+          table =>
+            table.type !== 'RESERVED'
+        ),
 
-    };
+      reserved:
+        allTables.filter(
+          table =>
+            table.type === 'RESERVED'
+        )
+
+    } as FloorSnapshot;
   }
 
 
-  /**
-   * Guarda el estado completo del plano.
-   *
-   * Mesas y reservados se guardan en la misma
-   * tabla "tables".
-   *
-   * La propiedad "type" determina qué es cada
-   * registro:
-   *
-   * TABLE    -> mesa
-   * RESERVED -> reservado
-   */
   async saveSnapshot(
     planId: string,
     snapshot: FloorSnapshot
   ): Promise<void> {
+
+    /*
+     * IMPORTANTE:
+     *
+     * El componente mantiene las mesas normales
+     * y los reservados en arrays separados.
+     *
+     * Supabase, sin embargo, guarda ambos en
+     * la misma tabla "tables".
+     *
+     * Por eso aquí los combinamos antes de
+     * enviarlos al RPC.
+     */
+    const allTables: ClubTable[] = [
+
+      ...(snapshot.tables ?? []),
+
+      ...(
+        (snapshot as any).reserved ?? []
+      )
+
+    ];
+
 
     const {
       error: rpcError
@@ -225,28 +227,14 @@ export class FloorPlanService {
           ),
 
         /*
-         * Aquí enviamos TODOS los objetos:
-         *
-         * - mesas
-         * - reservados
-         *
-         * Cada uno conserva su "type".
+         * Se envían tanto TABLE como RESERVED.
          */
         p_tables:
-          snapshot.tables.map(
+          allTables.map(
             ({
               id,
               ...table
-            }) => ({
-              ...table,
-
-              /*
-               * Nos aseguramos de conservar
-               * explícitamente el tipo.
-               */
-              type:
-                table.type
-            })
+            }) => table
           )
 
       }
@@ -259,3 +247,4 @@ export class FloorPlanService {
   }
 
 }
+
