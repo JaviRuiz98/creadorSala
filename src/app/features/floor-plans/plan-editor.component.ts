@@ -2964,51 +2964,63 @@ export class PlanEditorComponent
 
 
     /*
-     * NUMERO
-     */
+ * NUMERO
+ *
+ * El número se posiciona respecto al
+ * origen 0,0 del icono de la mesa.
+ *
+ * Esto permite que TABLE y RESERVED
+ * tengan el número correctamente
+ * centrado dentro de su figura.
+ */
 
-    this.layer.add(
+const numberText =
+  new Konva.Text({
 
-      new Konva.Text({
+    x:
+      t.x,
 
-        x:
-          t.shape === 'circle'
-            ? t.x - 20
-            : t.x,
+    y:
+      t.y,
 
-        y:
-          t.y - 8,
+    text:
+      `${t.number}`,
 
-        text:
-          `${t.number}`,
+    fill:
+      hasPending ||
+      active
+        ? '#ffffff'
+        : '#4d3326',
 
-        fill:
-          '#ffffff',
+    fontSize:
+      18,
 
-        fontSize:
-          18,
+    fontStyle:
+      'bold',
 
-        fontStyle:
-          'bold',
+    width:
+      t.width,
 
-        width:
-          t.shape === 'circle'
-            ? 40
-            : t.width,
+    height:
+      t.height,
 
-        align:
-          'center',
+    align:
+      'center',
 
-        listening:
-          false
+    verticalAlign:
+      'middle',
 
-      })
+    listening:
+      false
 
-    );
+  });
+
+
+this.layer.add(
+  numberText
+);
 
   }
-
-
   /* =========================================================
      RENDER RESERVED
      ========================================================= */
@@ -3168,50 +3180,58 @@ export class PlanEditorComponent
 
 
     /*
-     * NUMERO DEL RESERVADO
-     */
+ * NUMERO DEL RESERVADO
+ *
+ * r.x / r.y representan la esquina superior
+ * izquierda del reservado.
+ *
+ * El texto ocupa todo el reservado y se
+ * centra horizontal y verticalmente.
+ */
 
-    this.layer.add(
+const numberText =
+  new Konva.Text({
 
-      new Konva.Text({
+    x:
+      r.x,
 
-        x:
-          r.shape === 'circle'
-            ? r.x - 20
-            : r.x,
+    y:
+      r.y,
 
-        y:
-          r.y - 8,
+    text:
+      `${r.number}`,
 
-        text:
-          `${r.number}`,
+    fill:
+      '#ffffff',
 
-        fill:
-          '#ffffff',
+    fontSize:
+      18,
 
-        fontSize:
-          18,
+    fontStyle:
+      'bold',
 
-        fontStyle:
-          'bold',
+    width:
+      r.width,
 
-        width:
-          r.shape === 'circle'
-            ? 40
-            : r.width,
+    height:
+      r.height,
 
-        align:
-          'center',
+    align:
+      'center',
 
-        listening:
-          false
+    verticalAlign:
+      'middle',
 
-      })
+    listening:
+      false
 
-    );
+  });
 
+
+this.layer.add(
+  numberText
+);
   }
-
 
   /* =========================================================
      KONVA POINT
