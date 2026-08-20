@@ -108,6 +108,20 @@ export class FloorPlanService {
   }
 
 
+  /**
+   * Carga el plano completo.
+   *
+   * Las mesas y los reservados se almacenan
+   * en la misma tabla "tables".
+   *
+   * La diferencia entre ambos está en:
+   *
+   * type = 'TABLE'
+   * type = 'RESERVED'
+   *
+   * Por tanto, ambos se cargan juntos en
+   * snapshot.tables.
+   */
   async load(
     planId: string
   ): Promise<FloorSnapshot> {
@@ -148,18 +162,46 @@ export class FloorPlanService {
     }
 
 
+    /*
+     * IMPORTANTE:
+     *
+     * No filtramos por type.
+     *
+     * Aquí entran tanto:
+     *
+     * TABLE
+     * RESERVED
+     *
+     * El componente PlanEditor será el encargado
+     * de distinguirlos mediante t.type.
+     */
+    const tables =
+      (tablesResult.data ?? []) as ClubTable[];
+
+
     return {
 
       elements:
         elementsResult.data as FloorPlanElement[],
 
-      tables:
-        tablesResult.data as ClubTable[]
+      tables
 
     };
   }
 
 
+  /**
+   * Guarda el estado completo del plano.
+   *
+   * Mesas y reservados se guardan en la misma
+   * tabla "tables".
+   *
+   * La propiedad "type" determina qué es cada
+   * registro:
+   *
+   * TABLE    -> mesa
+   * RESERVED -> reservado
+   */
   async saveSnapshot(
     planId: string,
     snapshot: FloorSnapshot
@@ -182,12 +224,29 @@ export class FloorPlanService {
             }) => element
           ),
 
+        /*
+         * Aquí enviamos TODOS los objetos:
+         *
+         * - mesas
+         * - reservados
+         *
+         * Cada uno conserva su "type".
+         */
         p_tables:
           snapshot.tables.map(
             ({
               id,
               ...table
-            }) => table
+            }) => ({
+              ...table,
+
+              /*
+               * Nos aseguramos de conservar
+               * explícitamente el tipo.
+               */
+              type:
+                table.type
+            })
           )
 
       }
