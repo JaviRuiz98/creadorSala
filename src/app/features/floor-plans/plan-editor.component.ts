@@ -54,47 +54,6 @@ type EditorTool =
   | 'text';
 
 
-/*
- * ============================================================
- * RESERVADO
- * ============================================================
- *
- * Los reservados se mantienen como una entidad independiente
- * de las mesas.
- *
- * Si ya tienes ClubReserved en models.ts puedes sustituir este
- * tipo por el import correspondiente.
- */
-
-interface ClubReserved {
-
-  id: string;
-
-  floor_plan_id: string;
-
-  number: number;
-
-  x: number;
-
-  y: number;
-
-  width: number;
-
-  height: number;
-
-  rotation: number;
-
-  shape:
-    | 'circle'
-    | 'rect';
-
-  created_at: string;
-
-  updated_at: string;
-
-}
-
-
 @Component({
 
   selector: 'app-plan-editor',
@@ -131,7 +90,6 @@ interface ClubReserved {
 
     <div class="editor-shell">
 
-
       <!-- =====================================================
            TOOLBAR
            ===================================================== -->
@@ -152,7 +110,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button"
               size="small"
@@ -163,7 +120,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button"
               size="small"
@@ -173,7 +129,6 @@ interface ClubReserved {
               T Texto
 
             </ion-button>
-
 
             <ion-button
               class="editor-button"
@@ -187,9 +142,6 @@ interface ClubReserved {
 
           </div>
 
-
-          <!-- ACCIONES -->
-
           <div class="tool-group">
 
             <ion-button
@@ -200,7 +152,6 @@ interface ClubReserved {
               💾 Guardar diseño
 
             </ion-button>
-
 
             <ion-button
               class="editor-button danger"
@@ -216,7 +167,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button"
               size="small"
@@ -227,7 +177,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button"
               size="small"
@@ -236,7 +185,6 @@ interface ClubReserved {
               + Mesa
 
             </ion-button>
-
 
             <ion-button
               class="editor-button reserved-button"
@@ -247,7 +195,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button icon-button"
               size="small"
@@ -257,7 +204,6 @@ interface ClubReserved {
               ↶
 
             </ion-button>
-
 
             <ion-button
               class="editor-button icon-button"
@@ -272,7 +218,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button icon-button"
               size="small"
@@ -281,7 +226,6 @@ interface ClubReserved {
               −
 
             </ion-button>
-
 
             <ion-button
               class="editor-button icon-button"
@@ -294,9 +238,6 @@ interface ClubReserved {
 
           </div>
 
-
-          <!-- ESTADO -->
-
           <span class="tool-status">
 
             Herramienta:
@@ -304,7 +245,6 @@ interface ClubReserved {
             <strong>
               {{ toolLabel }}
             </strong>
-
 
             @if (selectedElementId) {
 
@@ -316,7 +256,6 @@ interface ClubReserved {
 
             }
 
-
             @if (selectedTable) {
 
               <span class="selected-status">
@@ -327,13 +266,11 @@ interface ClubReserved {
 
             }
 
-
             @if (selectedReserved) {
 
               <span class="selected-status">
 
-                · Reservado
-                {{ selectedReserved.number }}
+                · Reservado {{ selectedReserved.number }}
 
               </span>
 
@@ -357,7 +294,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button"
               size="small"
@@ -368,7 +304,6 @@ interface ClubReserved {
 
             </ion-button>
 
-
             <ion-button
               class="editor-button icon-button"
               size="small"
@@ -377,7 +312,6 @@ interface ClubReserved {
               −
 
             </ion-button>
-
 
             <ion-button
               class="editor-button icon-button"
@@ -393,7 +327,6 @@ interface ClubReserved {
         }
 
       </div>
-
 
 
       <!-- =====================================================
@@ -412,7 +345,6 @@ interface ClubReserved {
         (pointercancel)="pointerUp($event)">
 
       </div>
-
 
 
       <!-- =====================================================
@@ -438,7 +370,6 @@ interface ClubReserved {
 
           </div>
 
-
           <ion-list>
 
             @for (
@@ -460,7 +391,6 @@ interface ClubReserved {
 
                   </h3>
 
-
                   <p>
 
                     {{
@@ -472,7 +402,6 @@ interface ClubReserved {
                   </p>
 
                 </ion-label>
-
 
                 @if (
                   item.status === 'PENDING'
@@ -495,7 +424,6 @@ interface ClubReserved {
             }
 
           </ion-list>
-
 
           <div class="add-order">
 
@@ -520,14 +448,12 @@ interface ClubReserved {
 
             </ion-select>
 
-
             <ion-input
               label="Cantidad"
               type="number"
               labelPlacement="stacked"
               [(ngModel)]="quantity">
             </ion-input>
-
 
             <ion-button
               class="editor-button primary full"
@@ -543,7 +469,6 @@ interface ClubReserved {
         </aside>
 
       }
-
 
 
       <!-- =====================================================
@@ -564,24 +489,20 @@ interface ClubReserved {
               T
             </div>
 
-
             <div class="dialog-content">
 
               <span class="dialog-eyebrow">
                 EDITOR DE PLANO
               </span>
 
-
               <h2>
                 Añadir texto
               </h2>
-
 
               <p>
                 Introduce el texto que quieres
                 colocar en el plano.
               </p>
-
 
               <ion-input
                 class="text-input"
@@ -592,7 +513,6 @@ interface ClubReserved {
                 (keydown.enter)="confirmAddText()">
               </ion-input>
 
-
               <div class="dialog-actions">
 
                 <ion-button
@@ -602,7 +522,6 @@ interface ClubReserved {
                   Cancelar
 
                 </ion-button>
-
 
                 <ion-button
                   class="dialog-button"
@@ -622,7 +541,6 @@ interface ClubReserved {
         </div>
 
       }
-
 
 
       <!-- =====================================================
@@ -645,24 +563,20 @@ interface ClubReserved {
 
             </div>
 
-
             <div class="dialog-content">
 
               <span class="dialog-eyebrow">
                 SALA CHOCOLATTE
               </span>
 
-
               <h2>
                 Diseño guardado
               </h2>
-
 
               <p>
                 El diseño del plano se ha guardado
                 correctamente.
               </p>
-
 
               <ion-button
                 class="dialog-button"
@@ -687,10 +601,6 @@ interface ClubReserved {
 
   styles: [`
 
-    /* =========================================================
-       EDITOR
-       ========================================================= */
-
     .editor-shell {
 
       position: relative;
@@ -712,11 +622,6 @@ interface ClubReserved {
         rgba(70, 43, 29, .08);
 
     }
-
-
-    /* =========================================================
-       TOOLBAR
-       ========================================================= */
 
     .editor-toolbar {
 
@@ -742,13 +647,11 @@ interface ClubReserved {
 
     }
 
-
     .editor-toolbar > * {
 
       pointer-events: auto;
 
     }
-
 
     .tool-group {
 
@@ -774,11 +677,6 @@ interface ClubReserved {
       backdrop-filter: blur(8px);
 
     }
-
-
-    /* =========================================================
-       BOTONES
-       ========================================================= */
 
     .editor-button {
 
@@ -808,13 +706,11 @@ interface ClubReserved {
 
     }
 
-
     .editor-button:hover {
 
       --background: #f4e7de;
 
     }
-
 
     .editor-button.active {
 
@@ -826,7 +722,6 @@ interface ClubReserved {
 
     }
 
-
     .editor-button.primary {
 
       --background: #6b4430;
@@ -837,13 +732,11 @@ interface ClubReserved {
 
     }
 
-
     .editor-button.primary:hover {
 
       --background: #593624;
 
     }
-
 
     .editor-button.danger {
 
@@ -853,7 +746,6 @@ interface ClubReserved {
 
     }
 
-
     .editor-button.danger:hover {
 
       --background: #f8e8e5;
@@ -861,7 +753,6 @@ interface ClubReserved {
       --color: #783333;
 
     }
-
 
     .editor-button.reserved-button {
 
@@ -873,13 +764,11 @@ interface ClubReserved {
 
     }
 
-
     .editor-button.reserved-button:hover {
 
       --background: #653c24;
 
     }
-
 
     .editor-button.full {
 
@@ -887,24 +776,17 @@ interface ClubReserved {
 
     }
 
-
     .editor-button.icon-button {
 
       min-width: 38px;
 
     }
 
-
     .editor-button:disabled {
 
       opacity: .45;
 
     }
-
-
-    /* =========================================================
-       STATUS
-       ========================================================= */
 
     .tool-status {
 
@@ -927,13 +809,11 @@ interface ClubReserved {
 
     }
 
-
     .tool-status strong {
 
       color: #4f3021;
 
     }
-
 
     .selected-status {
 
@@ -942,11 +822,6 @@ interface ClubReserved {
       font-weight: 700;
 
     }
-
-
-    /* =========================================================
-       CANVAS
-       ========================================================= */
 
     .canvas-area {
 
@@ -975,24 +850,17 @@ interface ClubReserved {
 
     }
 
-
     .canvas-area.draw-mode {
 
       cursor: crosshair;
 
     }
 
-
     .canvas-area.text-mode {
 
       cursor: text;
 
     }
-
-
-    /* =========================================================
-       PEDIDOS
-       ========================================================= */
 
     .orders-panel {
 
@@ -1010,7 +878,6 @@ interface ClubReserved {
 
     }
 
-
     .orders-head {
 
       padding: 14px;
@@ -1025,7 +892,6 @@ interface ClubReserved {
 
     }
 
-
     .add-order {
 
       padding: 14px;
@@ -1035,11 +901,6 @@ interface ClubReserved {
       gap: 8px;
 
     }
-
-
-    /* =========================================================
-       DIALOGOS
-       ========================================================= */
 
     .dialog-backdrop {
 
@@ -1063,7 +924,6 @@ interface ClubReserved {
       backdrop-filter: blur(4px);
 
     }
-
 
     .save-dialog,
     .text-dialog {
@@ -1091,7 +951,6 @@ interface ClubReserved {
 
     }
 
-
     .text-dialog {
 
       width:
@@ -1101,7 +960,6 @@ interface ClubReserved {
         );
 
     }
-
 
     .dialog-icon {
 
@@ -1127,7 +985,6 @@ interface ClubReserved {
 
     }
 
-
     .dialog-icon.text-icon {
 
       background: #f1e5dc;
@@ -1135,7 +992,6 @@ interface ClubReserved {
       color: #6b4430;
 
     }
-
 
     .dialog-content {
 
@@ -1145,7 +1001,6 @@ interface ClubReserved {
       text-align: center;
 
     }
-
 
     .dialog-eyebrow {
 
@@ -1163,7 +1018,6 @@ interface ClubReserved {
 
     }
 
-
     .dialog-content h2 {
 
       margin:
@@ -1174,7 +1028,6 @@ interface ClubReserved {
       font-size: 23px;
 
     }
-
 
     .dialog-content p {
 
@@ -1188,11 +1041,6 @@ interface ClubReserved {
       line-height: 1.5;
 
     }
-
-
-    /* =========================================================
-       INPUT TEXTO
-       ========================================================= */
 
     .text-input {
 
@@ -1218,11 +1066,6 @@ interface ClubReserved {
 
     }
 
-
-    /* =========================================================
-       DIALOG ACTIONS
-       ========================================================= */
-
     .dialog-actions {
 
       display: flex;
@@ -1232,7 +1075,6 @@ interface ClubReserved {
       justify-content: flex-end;
 
     }
-
 
     .dialog-button {
 
@@ -1252,7 +1094,6 @@ interface ClubReserved {
 
     }
 
-
     .dialog-secondary {
 
       --background: #f4e7de;
@@ -1268,7 +1109,6 @@ interface ClubReserved {
       margin: 0;
 
     }
-
 
     @keyframes dialogIn {
 
@@ -1294,11 +1134,6 @@ interface ClubReserved {
 
     }
 
-
-    /* =========================================================
-       MOBILE
-       ========================================================= */
-
     @media (max-width: 800px) {
 
       .editor-shell {
@@ -1306,7 +1141,6 @@ interface ClubReserved {
         min-height: 70vh;
 
       }
-
 
       .orders-panel {
 
@@ -1334,13 +1168,11 @@ interface ClubReserved {
 
       }
 
-
       .tool-status {
 
         display: none;
 
       }
-
 
       .editor-toolbar {
 
@@ -1352,13 +1184,11 @@ interface ClubReserved {
 
       }
 
-
       .dialog-actions {
 
         flex-direction: column;
 
       }
-
 
       .dialog-secondary,
       .dialog-button {
@@ -1380,12 +1210,10 @@ export class PlanEditorComponent
 
 
   @Input({ required: true })
-
   plan!: FloorPlan;
 
 
   @Input()
-
   mode:
     'editor' |
     'operativo' =
@@ -1393,7 +1221,6 @@ export class PlanEditorComponent
 
 
   @Output()
-
   pendingChanged =
     new EventEmitter<number>();
 
@@ -1402,7 +1229,6 @@ export class PlanEditorComponent
     'container',
     { static: true }
   )
-
   container!: ElementRef<HTMLDivElement>;
 
 
@@ -1437,11 +1263,18 @@ export class PlanEditorComponent
   elements:
     FloorPlanElement[] = [];
 
+  /**
+   * IMPORTANTE:
+   *
+   * tables contiene SOLO mesas normales.
+   *
+   * Los reservados están en reserved.
+   */
   tables:
     ClubTable[] = [];
 
   reserved:
-    ClubReserved[] = [];
+    ClubTable[] = [];
 
 
   /* =========================================================
@@ -1452,18 +1285,11 @@ export class PlanEditorComponent
     ClubTable | null = null;
 
   selectedReserved:
-    ClubReserved | null = null;
+    ClubTable | null = null;
 
   selectedElementId:
     string | null = null;
 
-
-  /*
-   * Extremo de línea que se está modificando.
-   *
-   * start = primer punto
-   * end   = último punto
-   */
 
   private activeEndpoint:
     'start' |
@@ -1587,7 +1413,6 @@ export class PlanEditorComponent
 
     }
 
-
     if (
       this.tool === 'text'
     ) {
@@ -1596,7 +1421,6 @@ export class PlanEditorComponent
 
     }
 
-
     if (
       this.tool === 'pan'
     ) {
@@ -1604,7 +1428,6 @@ export class PlanEditorComponent
       return 'Mover plano';
 
     }
-
 
     return 'Seleccionar';
 
@@ -1674,7 +1497,6 @@ export class PlanEditorComponent
 
     }
 
-
     return {
 
       start: {
@@ -1727,7 +1549,6 @@ export class PlanEditorComponent
 
     }
 
-
     if (
       endpoint === 'start'
     ) {
@@ -1752,12 +1573,6 @@ export class PlanEditorComponent
         point.y;
 
     }
-
-
-    /*
-     * x/y representan el primer
-     * punto de la línea.
-     */
 
     e.x =
       e.points[0];
@@ -1792,7 +1607,7 @@ export class PlanEditorComponent
 
   /* =========================================================
      MOVE WHOLE LINE
-     * ========================================================= */
+     ========================================================= */
 
   private moveLine(
     e: FloorPlanElement,
@@ -1821,13 +1636,11 @@ export class PlanEditorComponent
 
     }
 
-
     e.x +=
       dx;
 
     e.y +=
       dy;
-
 
     e.updated_at =
       new Date()
@@ -1852,35 +1665,65 @@ export class PlanEditorComponent
       snap.elements;
 
 
+    /*
+     * Solo mesas normales.
+     */
     this.tables =
-      snap.tables;
+      (snap.tables ?? [])
+        .filter(
+          t =>
+            t.type !== 'RESERVED'
+        );
 
 
     /*
-     * Reservados independientes
-     * de las mesas.
+     * Reservados.
+     *
+     * Primero intentamos usar el campo
+     * reservado del snapshot.
+     *
+     * También hacemos compatibilidad
+     * con datos antiguos donde los
+     * reservados estaban dentro de tables.
      */
+    const snapshotReserved =
+      (snap as any).reserved ?? [];
 
-    this.reserved =
-      (snap as any).reserved ??
-      [];
+
+    const legacyReserved =
+      (snap.tables ?? [])
+        .filter(
+          t =>
+            t.type === 'RESERVED'
+        );
+
+
+    this.reserved = [
+
+      ...snapshotReserved,
+
+      ...legacyReserved.filter(
+        legacy =>
+          !snapshotReserved.some(
+            (r: ClubTable) =>
+              r.id === legacy.id
+          )
+      )
+
+    ];
 
 
     this.selectedTable =
       null;
 
-
     this.selectedReserved =
       null;
-
 
     this.selectedElementId =
       null;
 
-
     this.activeEndpoint =
       null;
-
 
     this.endpointShape =
       null;
@@ -2042,10 +1885,6 @@ export class PlanEditorComponent
       const e of this.elements
     ) {
 
-      /*
-       * TEXTO
-       */
-
       if (
         String(e.kind) === 'text'
       ) {
@@ -2138,10 +1977,8 @@ export class PlanEditorComponent
             this.selectedElementId =
               e.id;
 
-
             this.selectedTable =
               null;
-
 
             this.selectedReserved =
               null;
@@ -2186,10 +2023,6 @@ export class PlanEditorComponent
 
       }
 
-
-      /*
-       * PAREDES / OTROS ELEMENTOS
-       */
 
       const points =
         e.points ??
@@ -2243,10 +2076,6 @@ export class PlanEditorComponent
         });
 
 
-      /* =====================================================
-         SELECCIONAR LINEA
-         ===================================================== */
-
       line.on(
         'click tap',
         (event) => {
@@ -2270,14 +2099,11 @@ export class PlanEditorComponent
           this.selectedElementId =
             e.id;
 
-
           this.selectedTable =
             null;
 
-
           this.selectedReserved =
             null;
-
 
           this.activeEndpoint =
             null;
@@ -2289,19 +2115,9 @@ export class PlanEditorComponent
       );
 
 
-      /* =====================================================
-         MOVER LINEA ENTERA
-         ===================================================== */
-
       line.on(
         'dragend',
         () => {
-
-          /*
-           * Los extremos tienen su propio
-           * drag y nunca deben llegar aquí
-           * como movimiento de línea completa.
-           */
 
           if (
             this.activeEndpoint
@@ -2334,25 +2150,12 @@ export class PlanEditorComponent
           }
 
 
-          /*
-           * Movemos todos los puntos.
-           *
-           * El otro extremo permanece
-           * a la misma distancia respecto
-           * del primero.
-           */
-
           this.moveLine(
             e,
             dx,
             dy
           );
 
-
-          /*
-           * Los puntos ya contienen el
-           * desplazamiento.
-           */
 
           line.position({
 
@@ -2376,10 +2179,6 @@ export class PlanEditorComponent
       );
 
 
-      /* =====================================================
-         EXTREMOS DE LINEA
-         ===================================================== */
-
       if (
         selected &&
         this.mode === 'editor' &&
@@ -2391,10 +2190,6 @@ export class PlanEditorComponent
 
 
         if (endpoints) {
-
-          /*
-           * EXTREMO INICIAL
-           */
 
           const startCircle =
             new Konva.Circle({
@@ -2535,7 +2330,6 @@ export class PlanEditorComponent
               this.activeEndpoint =
                 null;
 
-
               this.endpointShape =
                 null;
 
@@ -2547,10 +2341,6 @@ export class PlanEditorComponent
             }
           );
 
-
-          /*
-           * EXTREMO FINAL
-           */
 
           const endCircle =
             new Konva.Circle({
@@ -2691,7 +2481,6 @@ export class PlanEditorComponent
               this.activeEndpoint =
                 null;
 
-
               this.endpointShape =
                 null;
 
@@ -2703,11 +2492,6 @@ export class PlanEditorComponent
             }
           );
 
-
-          /*
-           * Los extremos quedan encima
-           * de la línea.
-           */
 
           this.layer.add(
             startCircle
@@ -2726,10 +2510,6 @@ export class PlanEditorComponent
 
       }
 
-
-      /* =====================================================
-         LABEL
-         ===================================================== */
 
       if (
         e.label &&
@@ -2795,395 +2575,45 @@ export class PlanEditorComponent
   }
 
 
-/* =========================================================
-   RENDER TABLE
-   ========================================================= */
-
-private renderTable(
-  t: ClubTable
-) {
-
-  const active =
-    this.selectedTable?.id ===
-    t.id;
-
-
-  const hasPending =
-    this.mode ===
-      'operativo' &&
-    this.pendingForTable(
-      t.id
-    ) > 0;
-
-
-  /*
-   * MESAS NEGRAS
-   *
-   * IMPORTANTE:
-   *
-   * t.x / t.y representan siempre
-   * la esquina superior izquierda
-   * de la mesa.
-   *
-   * En Konva:
-   *
-   * - Rect -> x/y = esquina superior izquierda
-   * - Circle -> x/y = centro
-   *
-   * Por eso, para Circle hacemos
-   * la conversión aquí.
-   */
-
-  const common = {
-
-    rotation:
-      t.rotation,
-
-    draggable:
-      this.mode ===
-        'editor' &&
-      this.tool ===
-        'select',
-
-    name:
-      t.id,
-
-    fill:
-      hasPending
-        ? '#9f2f3a'
-        : '#111111',
-
-    stroke:
-      active
-        ? '#704936'
-        : '#000000',
-
-    strokeWidth:
-      active
-        ? 4
-        : 3
-
-  };
-
-
-  const shape:
-    Konva.Shape =
-
-    t.shape === 'circle'
-
-      ?
-
-      new Konva.Circle({
-
-        ...common,
-
-        /*
-         * El modelo usa x/y como
-         * esquina superior izquierda.
-         *
-         * Konva Circle necesita
-         * el centro.
-         */
-
-        x:
-          t.x +
-          t.width / 2,
-
-        y:
-          t.y +
-          t.height / 2,
-
-        radius:
-          Math.min(
-            t.width,
-            t.height
-          ) / 2
-
-      })
-
-      :
-
-      new Konva.Rect({
-
-        ...common,
-
-        x:
-          t.x,
-
-        y:
-          t.y,
-
-        width:
-          t.width,
-
-        height:
-          t.height,
-
-        cornerRadius:
-          10
-
-      });
-
-
-  /*
-   * =======================================================
-   * SELECCIONAR
-   * =======================================================
-   */
-
-  shape.on(
-    'click tap',
-    (event) => {
-
-      event.cancelBubble =
-        true;
-
-
-      this.selectTable(t);
-
-    }
-  );
-
-
-  /*
-   * =======================================================
-   * MOVER
-   * =======================================================
-   */
-
-  shape.on(
-    'dragend',
-    () => {
-
-      if (
-        this.mode !==
-        'editor'
-      ) {
-
-        return;
-
-      }
-
-
-      /*
-       * RECT
-       *
-       * x/y ya son la esquina
-       * superior izquierda.
-       */
-
-      if (
-        t.shape === 'circle'
-      ) {
-
-        t.x =
-          shape.x();
-
-        t.y =
-          shape.y();
-
-      }
-
-      /*
-       * CIRCLE
-       *
-       * shape.x/y son el centro,
-       * pero t.x/y son la esquina
-       * superior izquierda.
-       */
-
-      else {
-
-        t.x =
-          shape.x() -
-          t.width / 2;
-
-        t.y =
-          shape.y() -
-          t.height / 2;
-
-      }
-
-
-      t.updated_at =
-        new Date()
-          .toISOString();
-
-
-      this.selectedElementId =
-        null;
-
-      this.selectedReserved =
-        null;
-
-
-      this.pushHistory();
-
-      this.render();
-
-    }
-  );
-
-
-  this.layer.add(
-    shape
-  );
-
-
-/*
- * =======================================================
- * NUMERO DE LA MESA
- * =======================================================
- *
- * El número ocupa toda la figura
- * y queda centrado horizontal y
- * verticalmente.
- */
-
-const numberText =
-  new Konva.Text({
-
-    x:
-      t.x,
-
-    y:
-      t.y,
-
-    text:
-      `${t.number}`,
-
-    /*
-     * El número de la mesa siempre
-     * será blanco.
-     */
-
-    fill:
-      '#ffffff',
-
-    fontSize:
-      18,
-
-    fontStyle:
-      'bold',
-
-    width:
-      t.width,
-
-    height:
-      t.height,
-
-    align:
-      'center',
-
-    verticalAlign:
-      'middle',
-
-    listening:
-      false
-
-  });
-
-
-/*
- * =======================================================
- * MOVER NUMERO JUNTO A LA MESA
- * =======================================================
- *
- * Mientras arrastramos la mesa,
- * actualizamos también la posición
- * del número.
- */
-
-shape.on(
-  'dragmove',
-  () => {
-
-    if (
-      t.shape === 'circle'
-    ) {
-
-      numberText.position({
-
-        x:
-          shape.x() -
-          t.width / 2,
-
-        y:
-          shape.y() -
-          t.height / 2
-
-      });
-
-    }
-    else {
-
-      numberText.position({
-
-        x:
-          shape.x(),
-
-        y:
-          shape.y()
-
-      });
-
-    }
-
-
-    this.layer.batchDraw();
-
-  }
-);
-
-
-this.layer.add(
-  numberText
-);
-}
   /* =========================================================
-     RENDER RESERVED
+     RENDER TABLE
      ========================================================= */
 
-  private renderReserved(
-    r: ClubReserved
+  private renderTable(
+    t: ClubTable
   ) {
 
     const active =
-      this.selectedReserved?.id ===
-      r.id;
+      this.selectedTable?.id ===
+      t.id;
 
 
-    /*
-     * RESERVADOS MARRONES
-     */
+    const hasPending =
+      this.mode === 'operativo' &&
+      this.pendingForTable(t.id) > 0;
+
 
     const common = {
 
-      x:
-        r.x,
-
-      y:
-        r.y,
-
       rotation:
-        r.rotation,
+        t.rotation,
 
       draggable:
-        this.mode ===
-          'editor' &&
-        this.tool ===
-          'select',
+        this.mode === 'editor' &&
+        this.tool === 'select',
 
       name:
-        r.id,
+        t.id,
 
       fill:
-        '#704936',
+        hasPending
+          ? '#9f2f3a'
+          : '#111111',
 
       stroke:
         active
-          ? '#b88a69'
-          : '#4d2e1f',
+          ? '#704936'
+          : '#000000',
 
       strokeWidth:
         active
@@ -3196,7 +2626,7 @@ this.layer.add(
     const shape:
       Konva.Shape =
 
-      r.shape === 'circle'
+      t.shape === 'circle'
 
         ?
 
@@ -3204,10 +2634,18 @@ this.layer.add(
 
           ...common,
 
+          x:
+            t.x +
+            t.width / 2,
+
+          y:
+            t.y +
+            t.height / 2,
+
           radius:
             Math.min(
-              r.width,
-              r.height
+              t.width,
+              t.height
             ) / 2
 
         })
@@ -3218,21 +2656,23 @@ this.layer.add(
 
           ...common,
 
+          x:
+            t.x,
+
+          y:
+            t.y,
+
           width:
-            r.width,
+            t.width,
 
           height:
-            r.height,
+            t.height,
 
           cornerRadius:
             10
 
         });
 
-
-    /*
-     * SELECCIONAR RESERVADO
-     */
 
     shape.on(
       'click tap',
@@ -3241,16 +2681,246 @@ this.layer.add(
         event.cancelBubble =
           true;
 
+        this.selectTable(t);
+
+      }
+    );
+
+
+    shape.on(
+      'dragend',
+      () => {
+
+        if (
+          this.mode !==
+          'editor'
+        ) {
+
+          return;
+
+        }
+
+
+        if (
+          t.shape === 'circle'
+        ) {
+
+          t.x =
+            shape.x() -
+            t.width / 2;
+
+          t.y =
+            shape.y() -
+            t.height / 2;
+
+        }
+        else {
+
+          t.x =
+            shape.x();
+
+          t.y =
+            shape.y();
+
+        }
+
+
+        t.updated_at =
+          new Date()
+            .toISOString();
+
+
+        this.selectedElementId =
+          null;
+
+        this.selectedReserved =
+          null;
+
+
+        this.pushHistory();
+
+        this.render();
+
+      }
+    );
+
+
+    this.layer.add(
+      shape
+    );
+
+
+    const numberText =
+      new Konva.Text({
+
+        x:
+          t.x,
+
+        y:
+          t.y,
+
+        text:
+          `${t.number}`,
+
+        fill:
+          '#ffffff',
+
+        fontSize:
+          18,
+
+        fontStyle:
+          'bold',
+
+        width:
+          t.width,
+
+        height:
+          t.height,
+
+        align:
+          'center',
+
+        verticalAlign:
+          'middle',
+
+        listening:
+          false
+
+      });
+
+
+    shape.on(
+      'dragmove',
+      () => {
+
+        if (
+          t.shape === 'circle'
+        ) {
+
+          numberText.position({
+
+            x:
+              shape.x() -
+              t.width / 2,
+
+            y:
+              shape.y() -
+              t.height / 2
+
+          });
+
+        }
+        else {
+
+          numberText.position({
+
+            x:
+              shape.x(),
+
+            y:
+              shape.y()
+
+          });
+
+        }
+
+
+        this.layer.batchDraw();
+
+      }
+    );
+
+
+    this.layer.add(
+      numberText
+    );
+
+  }
+
+
+  /* =========================================================
+     RENDER RESERVED
+     ========================================================= */
+
+  private renderReserved(
+    r: ClubTable
+  ) {
+
+    const active =
+      this.selectedReserved?.id ===
+      r.id;
+
+
+    const shape =
+      new Konva.Rect({
+
+        x:
+          r.x,
+
+        y:
+          r.y,
+
+        width:
+          r.width,
+
+        height:
+          r.height,
+
+        rotation:
+          r.rotation,
+
+        cornerRadius:
+          14,
+
+        fill:
+          '#704936',
+
+        stroke:
+          active
+            ? '#3d2417'
+            : '#704936',
+
+        strokeWidth:
+          active
+            ? 5
+            : 3,
+
+        draggable:
+          this.mode === 'editor' &&
+          this.tool === 'select',
+
+        name:
+          r.id,
+
+        shadowColor:
+          'rgba(0,0,0,.15)',
+
+        shadowBlur:
+          active
+            ? 8
+            : 3,
+
+        shadowOffset:
+          {
+            x: 0,
+            y: 2
+          }
+
+      });
+
+
+    shape.on(
+      'click tap',
+      (event) => {
+
+        event.cancelBubble =
+          true;
 
         this.selectReserved(r);
 
       }
     );
 
-
-    /*
-     * MOVER RESERVADO
-     */
 
     shape.on(
       'dragend',
@@ -3298,117 +2968,71 @@ this.layer.add(
     );
 
 
-    /*
- * NUMERO DEL RESERVADO
- *
- * r.x / r.y representan la esquina superior
- * izquierda del reservado.
- *
- * El texto ocupa todo el reservado y se
- * centra horizontal y verticalmente.
- */
+    const reservedText =
+      new Konva.Text({
 
-const numberText =
-  new Konva.Text({
+        x:
+          r.x,
 
-    x:
-      r.x,
+        y:
+          r.y,
 
-    y:
-      r.y,
+        text:
+          `RESERVADO\n${r.number}`,
 
-    text:
-      `${r.number}`,
+        fill:
+          '#ffffff',
 
-    fill:
-      '#ffffff',
+        fontSize:
+          16,
 
-    fontSize:
-      18,
+        fontStyle:
+          'bold',
 
-    fontStyle:
-      'bold',
+        width:
+          r.width,
 
-    width:
-      r.width,
+        height:
+          r.height,
 
-    height:
-      r.height,
+        align:
+          'center',
 
-    align:
-      'center',
+        verticalAlign:
+          'middle',
 
-    verticalAlign:
-      'middle',
+        listening:
+          false,
 
-    listening:
-      false
+        lineHeight:
+          1.15
 
-  });
+      });
 
 
-this.layer.add(
-  numberText
-);
-  }
+    shape.on(
+      'dragmove',
+      () => {
 
-  /* =========================================================
-     KONVA POINT
-     ========================================================= */
+        reservedText.position({
 
-  private getStagePointerPoint(
-    event: Event
-  ): Point | null {
+          x:
+            shape.x(),
 
-    if (!this.stage) {
+          y:
+            shape.y()
 
-      return null;
-
-    }
+        });
 
 
-    this.stage.setPointersPositions(
-      event
+        this.layer.batchDraw();
+
+      }
     );
 
 
-    const pointer =
-      this.stage.getPointerPosition();
-
-
-    if (!pointer) {
-
-      return null;
-
-    }
-
-
-    const transform =
-      this.stage
-        .getAbsoluteTransform()
-        .copy();
-
-
-    transform.invert();
-
-
-    return transform.point(
-      pointer
-    );
-
-  }
-
-
-  /* =========================================================
-     CANVAS POINT
-     ========================================================= */
-
-  private getCanvasPoint(
-    ev: PointerEvent
-  ): Point | null {
-
-    return this.getStagePointerPoint(
-      ev
+    this.layer.add(
+      reservedText
     );
 
   }
@@ -3425,14 +3049,11 @@ this.layer.add(
     this.selectedTable =
       t;
 
-
     this.selectedReserved =
       null;
 
-
     this.selectedElementId =
       null;
-
 
     this.activeEndpoint =
       null;
@@ -3458,23 +3079,28 @@ this.layer.add(
      ========================================================= */
 
   private selectReserved(
-    r: ClubReserved
+    r: ClubTable
   ) {
 
     this.selectedReserved =
       r;
 
-
     this.selectedTable =
       null;
-
 
     this.selectedElementId =
       null;
 
-
     this.activeEndpoint =
       null;
+
+    /*
+     * Un reservado nunca abre
+     * el panel de pedidos.
+     */
+    this.orderItems = [];
+
+    this.selectedPending = 0;
 
 
     this.render();
@@ -3509,7 +3135,6 @@ this.layer.add(
 
       this.selectedElementId =
         null;
-
 
       this.activeEndpoint =
         null;
@@ -3817,10 +3442,8 @@ this.layer.add(
       this.textPosition =
         point;
 
-
       this.newText =
         '';
-
 
       this.showTextDialog =
         true;
@@ -3955,135 +3578,110 @@ this.layer.add(
      ========================================================= */
 
   pointerUp(
-  ev: PointerEvent
-) {
-
-  if (
-    this.drawingPointerId !==
-    ev.pointerId
+    ev: PointerEvent
   ) {
 
-    return;
+    if (
+      this.drawingPointerId !==
+      ev.pointerId
+    ) {
 
-  }
+      return;
+
+    }
 
 
-  this.drawingPointerId =
-    null;
+    this.drawingPointerId =
+      null;
 
 
-  if (
-    !this.drawingShape ||
-    this.drawing.length < 2
-  ) {
+    if (
+      !this.drawingShape ||
+      this.drawing.length < 2
+    ) {
+
+      this.clearDrawing();
+
+      return;
+
+    }
+
+
+    const segments =
+      this.geometry.toSegments(
+        this.drawing
+      );
+
+
+    const now =
+      new Date()
+        .toISOString();
+
+
+    const newElements:
+      FloorPlanElement[] =
+      segments.map(
+        s => ({
+
+          id:
+            crypto.randomUUID(),
+
+          floor_plan_id:
+            this.plan.id,
+
+          kind:
+            'wall',
+
+          x:
+            s.x,
+
+          y:
+            s.y,
+
+          width:
+            s.width,
+
+          height:
+            s.height,
+
+          rotation:
+            s.rotation,
+
+          points:
+            s.points,
+
+          label:
+            null,
+
+          z_index:
+            this.elements.length,
+
+          created_at:
+            now,
+
+          updated_at:
+            now
+
+        })
+      );
+
+
+    this.elements = [
+
+      ...this.elements,
+
+      ...newElements
+
+    ];
+
 
     this.clearDrawing();
 
-    return;
+    this.pushHistory();
+
+    this.render();
 
   }
-
-
-  /*
-   * Convertimos el trazo actual
-   * inmediatamente en elementos permanentes.
-   */
-
-  const segments =
-    this.geometry.toSegments(
-      this.drawing
-    );
-
-
-  const now =
-    new Date()
-      .toISOString();
-
-
-  const newElements:
-    FloorPlanElement[] =
-    segments.map(
-      s => ({
-
-        id:
-          crypto.randomUUID(),
-
-        floor_plan_id:
-          this.plan.id,
-
-        kind:
-          'wall',
-
-        x:
-          s.x,
-
-        y:
-          s.y,
-
-        width:
-          s.width,
-
-        height:
-          s.height,
-
-        rotation:
-          s.rotation,
-
-        points:
-          s.points,
-
-        label:
-          null,
-
-        z_index:
-          this.elements.length,
-
-        created_at:
-          now,
-
-        updated_at:
-          now
-
-      })
-    );
-
-
-  /*
-   * MUY IMPORTANTE:
-   *
-   * Añadimos los nuevos segmentos
-   * a los elementos existentes.
-   */
-
-  this.elements = [
-    ...this.elements,
-    ...newElements
-  ];
-
-
-  /*
-   * Limpiamos únicamente el dibujo
-   * temporal.
-   */
-
-  this.clearDrawing();
-
-
-  /*
-   * Guardamos el nuevo estado
-   * en el historial.
-   */
-
-  this.pushHistory();
-
-
-  /*
-   * Redibujamos todo desde this.elements.
-   */
-
-  this.render();
-
-}
 
 
   /* =========================================================
@@ -4145,10 +3743,8 @@ this.layer.add(
 
     this.drawing = [];
 
-
     this.drawingShape =
       null;
-
 
     this.drawingPointerId =
       null;
@@ -4176,10 +3772,8 @@ this.layer.add(
     this.showTextDialog =
       false;
 
-
     this.newText =
       '';
-
 
     this.textPosition =
       null;
@@ -4269,10 +3863,8 @@ this.layer.add(
     this.selectedElementId =
       textElement.id;
 
-
     this.selectedTable =
       null;
-
 
     this.selectedReserved =
       null;
@@ -4280,12 +3872,9 @@ this.layer.add(
 
     this.pushHistory();
 
-
     this.render();
 
-
     this.closeTextDialog();
-
 
     this.setTool(
       'select'
@@ -4380,12 +3969,9 @@ this.layer.add(
 
     this.clearDrawing();
 
-
     this.pushHistory();
 
-
     this.render();
-
 
     this.setTool(
       'select'
@@ -4402,11 +3988,6 @@ this.layer.add(
 
     try {
 
-      /*
-       * Convertimos cualquier dibujo
-       * pendiente antes de guardar.
-       */
-
       if (
         this.drawing.length >=
         2
@@ -4417,14 +3998,6 @@ this.layer.add(
       }
 
 
-      /*
-       * Guardamos:
-       *
-       * - elementos
-       * - mesas
-       * - reservados
-       */
-
       await this.floors.saveSnapshot(
 
         this.plan.id,
@@ -4434,9 +4007,15 @@ this.layer.add(
           elements:
             this.elements,
 
+          /*
+           * Solo mesas normales.
+           */
           tables:
             this.tables,
 
+          /*
+           * Reservados separados.
+           */
           reserved:
             this.reserved
 
@@ -4481,16 +4060,13 @@ this.layer.add(
 
     const numbers =
       new Set(
-        this.tables.map(
-          t => t.number
-        )
+        this.tables
+          .map(
+            t =>
+              t.number
+          )
       );
 
-
-    /*
-     * Numeración independiente
-     * de los reservados.
-     */
 
     let n =
       1;
@@ -4510,74 +4086,72 @@ this.layer.add(
         .toISOString();
 
 
-const table: ClubTable = {
+    const table:
+      ClubTable = {
 
-  id:
-    crypto.randomUUID(),
+        id:
+          crypto.randomUUID(),
 
-  floor_plan_id:
-    this.plan.id,
+        floor_plan_id:
+          this.plan.id,
 
-  number:
-    n,
+        number:
+          n,
 
-  type:
-    'TABLE',
+        type:
+          'TABLE',
 
-  x:
-    300 +
-    this.tables.length *
-    20,
+        x:
+          300 +
+          this.tables.length *
+          20,
 
-  y:
-    300 +
-    this.tables.length *
-    20,
+        y:
+          300 +
+          this.tables.length *
+          20,
 
-  width:
-    100,
+        width:
+          100,
 
-  height:
-    80,
+        height:
+          80,
 
-  rotation:
-    0,
+        rotation:
+          0,
 
-  shape:
-    'circle',
+        shape:
+          'circle',
 
-  created_at:
-    now,
+        created_at:
+          now,
 
-  updated_at:
-    now
+        updated_at:
+          now
 
-};
+      };
 
-this.tables = [
 
-  ...this.tables,
+    this.tables = [
 
-  table
+      ...this.tables,
 
-];
+      table
 
+    ];
 
 
     this.selectedTable =
       table;
 
-
     this.selectedReserved =
       null;
-
 
     this.selectedElementId =
       null;
 
 
     this.pushHistory();
-
 
     this.render();
 
@@ -4592,20 +4166,13 @@ this.tables = [
 
     const numbers =
       new Set(
-        this.reserved.map(
-          r => r.number
-        )
+        this.reserved
+          .map(
+            r =>
+              r.number
+          )
       );
 
-
-    /*
-     * Numeración independiente
-     * de las mesas.
-     *
-     * Reservado 1
-     * Reservado 2
-     * Reservado 3
-     */
 
     let n =
       1;
@@ -4626,13 +4193,16 @@ this.tables = [
 
 
     const reserved:
-      ClubReserved = {
+      ClubTable = {
 
         id:
           crypto.randomUUID(),
 
         floor_plan_id:
           this.plan.id,
+
+        type:
+          'RESERVED',
 
         number:
           n,
@@ -4648,7 +4218,7 @@ this.tables = [
           20,
 
         width:
-          120,
+          140,
 
         height:
           80,
@@ -4657,7 +4227,7 @@ this.tables = [
           0,
 
         shape:
-          'rect',
+          'rectangle',
 
         created_at:
           now,
@@ -4668,6 +4238,12 @@ this.tables = [
       };
 
 
+    /*
+     * MUY IMPORTANTE:
+     *
+     * El reservado NO se mete
+     * dentro de this.tables.
+     */
     this.reserved = [
 
       ...this.reserved,
@@ -4680,17 +4256,14 @@ this.tables = [
     this.selectedReserved =
       reserved;
 
-
     this.selectedTable =
       null;
-
 
     this.selectedElementId =
       null;
 
 
     this.pushHistory();
-
 
     this.render();
 
@@ -4699,7 +4272,7 @@ this.tables = [
 
   /* =========================================================
      PAN
-     ========================================================= */
+     * ========================================================= */
 
   togglePan() {
 
@@ -4719,7 +4292,7 @@ this.tables = [
 
   /* =========================================================
      ZOOM
-     ========================================================= */
+     * ========================================================= */
 
   zoom(
     delta: number
@@ -4823,11 +4396,6 @@ this.tables = [
       );
 
 
-    /*
-     * Punto del plano que está
-     * debajo del cursor.
-     */
-
     const mousePointTo =
       {
 
@@ -4859,11 +4427,6 @@ this.tables = [
     });
 
 
-    /*
-     * Conservamos ese punto
-     * debajo del cursor.
-     */
-
     this.stage.position({
 
       x:
@@ -4889,14 +4452,6 @@ this.tables = [
      ========================================================= */
 
   pushHistory() {
-
-    /*
-     * FloorSnapshot puede no tener todavía
-     * "reserved" en el modelo antiguo.
-     *
-     * Lo incluimos igualmente para que
-     * undo/redo mantenga los reservados.
-     */
 
     const snapshot:
       FloorSnapshot =
@@ -4975,22 +4530,63 @@ this.tables = [
 
     this.reserved =
       structuredClone(
-        (s as any).reserved ??
-        []
+        (s as any).reserved ?? []
       );
+
+
+    /*
+     * Compatibilidad con snapshots
+     * antiguos que guardasen reservados
+     * dentro de tables.
+     */
+    const legacyReserved =
+      this.tables.filter(
+        t =>
+          t.type === 'RESERVED'
+      );
+
+
+    if (
+      legacyReserved.length
+    ) {
+
+      this.tables =
+        this.tables.filter(
+          t =>
+            t.type !== 'RESERVED'
+        );
+
+
+      for (
+        const legacy of legacyReserved
+      ) {
+
+        if (
+          !this.reserved.some(
+            r =>
+              r.id === legacy.id
+          )
+        ) {
+
+          this.reserved.push(
+            legacy
+          );
+
+        }
+
+      }
+
+    }
 
 
     this.selectedElementId =
       null;
 
-
     this.selectedTable =
       null;
 
-
     this.selectedReserved =
       null;
-
 
     this.activeEndpoint =
       null;
@@ -5170,6 +4766,68 @@ this.tables = [
 
     }
     catch {}
+
+  }
+
+
+  /* =========================================================
+     STAGE POINTER
+     ========================================================= */
+
+  private getStagePointerPoint(
+    event: Event
+  ): Point | null {
+
+    if (!this.stage) {
+
+      return null;
+
+    }
+
+
+    this.stage.setPointersPositions(
+      event
+    );
+
+
+    const pointer =
+      this.stage.getPointerPosition();
+
+
+    if (!pointer) {
+
+      return null;
+
+    }
+
+
+    const transform =
+      this.stage
+        .getAbsoluteTransform()
+        .copy();
+
+
+    transform.invert();
+
+
+    return transform.point(
+      pointer
+    );
+
+  }
+
+
+  /* =========================================================
+     CANVAS POINT
+     ========================================================= */
+
+  private getCanvasPoint(
+    ev: PointerEvent
+  ): Point | null {
+
+    return this.getStagePointerPoint(
+      ev
+    );
 
   }
 
