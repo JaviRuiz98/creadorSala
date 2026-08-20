@@ -2795,141 +2795,186 @@ export class PlanEditorComponent
   }
 
 
-  /* =========================================================
-     RENDER TABLE
-     ========================================================= */
+/* =========================================================
+   RENDER TABLE
+   ========================================================= */
 
-  private renderTable(
-    t: ClubTable
-  ) {
+private renderTable(
+  t: ClubTable
+) {
 
-    const active =
-      this.selectedTable?.id ===
-      t.id;
+  const active =
+    this.selectedTable?.id ===
+    t.id;
 
 
-    const hasPending =
+  const hasPending =
+    this.mode ===
+      'operativo' &&
+    this.pendingForTable(
+      t.id
+    ) > 0;
+
+
+  /*
+   * MESAS NEGRAS
+   *
+   * IMPORTANTE:
+   *
+   * t.x / t.y representan siempre
+   * la esquina superior izquierda
+   * de la mesa.
+   *
+   * En Konva:
+   *
+   * - Rect -> x/y = esquina superior izquierda
+   * - Circle -> x/y = centro
+   *
+   * Por eso, para Circle hacemos
+   * la conversión aquí.
+   */
+
+  const common = {
+
+    rotation:
+      t.rotation,
+
+    draggable:
       this.mode ===
-        'operativo' &&
-      this.pendingForTable(
-        t.id
-      ) > 0;
+        'editor' &&
+      this.tool ===
+        'select',
+
+    name:
+      t.id,
+
+    fill:
+      hasPending
+        ? '#9f2f3a'
+        : '#111111',
+
+    stroke:
+      active
+        ? '#704936'
+        : '#000000',
+
+    strokeWidth:
+      active
+        ? 4
+        : 3
+
+  };
 
 
-    /*
-     * MESAS NEGRAS
-     */
+  const shape:
+    Konva.Shape =
 
-    const common = {
+    t.shape === 'circle'
 
-      x:
-        t.x,
+      ?
 
-      y:
-        t.y,
+      new Konva.Circle({
 
-      rotation:
-        t.rotation,
+        ...common,
 
-      draggable:
-        this.mode ===
-          'editor' &&
-        this.tool ===
-          'select',
+        /*
+         * El modelo usa x/y como
+         * esquina superior izquierda.
+         *
+         * Konva Circle necesita
+         * el centro.
+         */
 
-      name:
-        t.id,
+        x:
+          t.x +
+          t.width / 2,
 
-      fill:
-        hasPending
-          ? '#9f2f3a'
-          : '#111111',
+        y:
+          t.y +
+          t.height / 2,
 
-      stroke:
-        active
-          ? '#704936'
-          : '#000000',
-
-      strokeWidth:
-        active
-          ? 4
-          : 3
-
-    };
-
-
-    const shape:
-      Konva.Shape =
-
-      t.shape === 'circle'
-
-        ?
-
-        new Konva.Circle({
-
-          ...common,
-
-          radius:
-            Math.min(
-              t.width,
-              t.height
-            ) / 2
-
-        })
-
-        :
-
-        new Konva.Rect({
-
-          ...common,
-
-          width:
+        radius:
+          Math.min(
             t.width,
+            t.height
+          ) / 2
 
-          height:
-            t.height,
+      })
 
-          cornerRadius:
-            10
+      :
 
-        });
+      new Konva.Rect({
+
+        ...common,
+
+        x:
+          t.x,
+
+        y:
+          t.y,
+
+        width:
+          t.width,
+
+        height:
+          t.height,
+
+        cornerRadius:
+          10
+
+      });
 
 
-    /*
-     * SELECCIONAR
-     */
+  /*
+   * =======================================================
+   * SELECCIONAR
+   * =======================================================
+   */
 
-    shape.on(
-      'click tap',
-      (event) => {
+  shape.on(
+    'click tap',
+    (event) => {
 
-        event.cancelBubble =
-          true;
+      event.cancelBubble =
+        true;
 
 
-        this.selectTable(t);
+      this.selectTable(t);
+
+    }
+  );
+
+
+  /*
+   * =======================================================
+   * MOVER
+   * =======================================================
+   */
+
+  shape.on(
+    'dragend',
+    () => {
+
+      if (
+        this.mode !==
+        'editor'
+      ) {
+
+        return;
 
       }
-    );
 
 
-    /*
-     * MOVER
-     */
+      /*
+       * RECT
+       *
+       * x/y ya son la esquina
+       * superior izquierda.
+       */
 
-    shape.on(
-      'dragend',
-      () => {
-
-        if (
-          this.mode !==
-          'editor'
-        ) {
-
-          return;
-
-        }
-
+      if (
+        t.shape === 'circle'
+      ) {
 
         t.x =
           shape.x();
@@ -2937,41 +2982,62 @@ export class PlanEditorComponent
         t.y =
           shape.y();
 
+      }
 
-        t.updated_at =
-          new Date()
-            .toISOString();
+      /*
+       * CIRCLE
+       *
+       * shape.x/y son el centro,
+       * pero t.x/y son la esquina
+       * superior izquierda.
+       */
 
+      else {
 
-        this.selectedElementId =
-          null;
+        t.x =
+          shape.x() -
+          t.width / 2;
 
-        this.selectedReserved =
-          null;
-
-
-        this.pushHistory();
-
-        this.render();
+        t.y =
+          shape.y() -
+          t.height / 2;
 
       }
-    );
 
 
-    this.layer.add(
-      shape
-    );
+      t.updated_at =
+        new Date()
+          .toISOString();
 
 
-    /*
- * NUMERO
+      this.selectedElementId =
+        null;
+
+      this.selectedReserved =
+        null;
+
+
+      this.pushHistory();
+
+      this.render();
+
+    }
+  );
+
+
+  this.layer.add(
+    shape
+  );
+
+
+/*
+ * =======================================================
+ * NUMERO DE LA MESA
+ * =======================================================
  *
- * El número se posiciona respecto al
- * origen 0,0 del icono de la mesa.
- *
- * Esto permite que TABLE y RESERVED
- * tengan el número correctamente
- * centrado dentro de su figura.
+ * El número ocupa toda la figura
+ * y queda centrado horizontal y
+ * verticalmente.
  */
 
 const numberText =
@@ -2986,11 +3052,13 @@ const numberText =
     text:
       `${t.number}`,
 
+    /*
+     * El número de la mesa siempre
+     * será blanco.
+     */
+
     fill:
-      hasPending ||
-      active
-        ? '#ffffff'
-        : '#4d3326',
+      '#ffffff',
 
     fontSize:
       18,
@@ -3016,11 +3084,62 @@ const numberText =
   });
 
 
+/*
+ * =======================================================
+ * MOVER NUMERO JUNTO A LA MESA
+ * =======================================================
+ *
+ * Mientras arrastramos la mesa,
+ * actualizamos también la posición
+ * del número.
+ */
+
+shape.on(
+  'dragmove',
+  () => {
+
+    if (
+      t.shape === 'circle'
+    ) {
+
+      numberText.position({
+
+        x:
+          shape.x() -
+          t.width / 2,
+
+        y:
+          shape.y() -
+          t.height / 2
+
+      });
+
+    }
+    else {
+
+      numberText.position({
+
+        x:
+          shape.x(),
+
+        y:
+          shape.y()
+
+      });
+
+    }
+
+
+    this.layer.batchDraw();
+
+  }
+);
+
+
 this.layer.add(
   numberText
 );
-
-  }
+}
   /* =========================================================
      RENDER RESERVED
      ========================================================= */
@@ -3836,39 +3955,135 @@ this.layer.add(
      ========================================================= */
 
   pointerUp(
-    ev: PointerEvent
+  ev: PointerEvent
+) {
+
+  if (
+    this.drawingPointerId !==
+    ev.pointerId
   ) {
 
-    if (
-      this.drawingPointerId !==
-      ev.pointerId
-    ) {
-
-      return;
-
-    }
-
-
-    this.drawingPointerId =
-      null;
-
-
-    if (
-      !this.drawingShape
-    ) {
-
-      return;
-
-    }
-
-
-    this.drawingShape =
-      null;
-
-
-    this.draftLayer.draw();
+    return;
 
   }
+
+
+  this.drawingPointerId =
+    null;
+
+
+  if (
+    !this.drawingShape ||
+    this.drawing.length < 2
+  ) {
+
+    this.clearDrawing();
+
+    return;
+
+  }
+
+
+  /*
+   * Convertimos el trazo actual
+   * inmediatamente en elementos permanentes.
+   */
+
+  const segments =
+    this.geometry.toSegments(
+      this.drawing
+    );
+
+
+  const now =
+    new Date()
+      .toISOString();
+
+
+  const newElements:
+    FloorPlanElement[] =
+    segments.map(
+      s => ({
+
+        id:
+          crypto.randomUUID(),
+
+        floor_plan_id:
+          this.plan.id,
+
+        kind:
+          'wall',
+
+        x:
+          s.x,
+
+        y:
+          s.y,
+
+        width:
+          s.width,
+
+        height:
+          s.height,
+
+        rotation:
+          s.rotation,
+
+        points:
+          s.points,
+
+        label:
+          null,
+
+        z_index:
+          this.elements.length,
+
+        created_at:
+          now,
+
+        updated_at:
+          now
+
+      })
+    );
+
+
+  /*
+   * MUY IMPORTANTE:
+   *
+   * Añadimos los nuevos segmentos
+   * a los elementos existentes.
+   */
+
+  this.elements = [
+    ...this.elements,
+    ...newElements
+  ];
+
+
+  /*
+   * Limpiamos únicamente el dibujo
+   * temporal.
+   */
+
+  this.clearDrawing();
+
+
+  /*
+   * Guardamos el nuevo estado
+   * en el historial.
+   */
+
+  this.pushHistory();
+
+
+  /*
+   * Redibujamos todo desde this.elements.
+   */
+
+  this.render();
+
+}
 
 
   /* =========================================================
