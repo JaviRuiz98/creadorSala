@@ -1403,6 +1403,7 @@ export class PlanEditorComponent
   private draftLayer!: Konva.Layer;
   private drawingShape:
     Konva.Line | null = null;
+    private ordersLoadRequestId = 0;
   private drawingPointerId:
     number | null = null;
   drawing: Point[] = [];
@@ -2630,14 +2631,8 @@ constructor(
       console.error('Error actualizando el estado de atención:', error);
     }
   }
-private async loadOrdersForTarget(
-  target?: ClubTable
-) {
-  console.log('📋 [PANEL DERECHO] loadOrdersForTarget INICIO');
-  console.log('📋 Target recibido:', target);
-  console.log('📋 selectedOrderTarget:', this.selectedOrderTarget);
-  console.log('📋 selectedTable:', this.selectedTable);
-  console.log('📋 selectedReserved:', this.selectedReserved);
+private async loadOrdersForTarget(target?: ClubTable) {
+  const requestId = ++this.ordersLoadRequestId;
 
   const orderTarget =
     target ??
@@ -2645,87 +2640,67 @@ private async loadOrdersForTarget(
     this.selectedTable ??
     this.selectedReserved;
 
-  console.log('📋 [PANEL DERECHO] orderTarget FINAL:', orderTarget);
-
   if (!orderTarget) {
-    console.warn('⚠️ [PANEL DERECHO] No hay target');
+    // Solo modificamos el estado si esta es la petición más reciente
+    if (requestId !== this.ordersLoadRequestId) return;
 
     this.orderItems = [];
     this.selectedPending = 0;
+    this.panelOrderItems.set([]);
     this.cdr.detectChanges();
-
-    console.log('📋 [PANEL DERECHO] Lista vaciada porque no hay target');
 
     return;
   }
 
   try {
     console.log(
-      '📋 [PANEL DERECHO] Consultando pedidos para ID:',
+      `📋 [PANEL DERECHO #${requestId}] Consultando pedidos para:`,
       orderTarget.id
     );
 
-    const result =
-      await this.orders.forTable(
-        orderTarget.id
-      );
+    const result = await this.orders.forTable(orderTarget.id);
 
     console.log(
-      '📋 [PANEL DERECHO] Resultado de orders.forTable():',
-      result
-    );
-
-    console.log(
-      '📋 [PANEL DERECHO] Items recibidos:',
+      `📋 [PANEL DERECHO #${requestId}] Resultado:`,
       result.items
     );
 
-    this.orderItems = [
-      ...result.items
-    ];
+    // Si mientras esperábamos hubo otra petición más reciente,
+    // ignoramos esta respuesta antigua.
+    if (requestId !== this.ordersLoadRequestId) {
+      console.warn(
+        `⚠️ [PANEL DERECHO #${requestId}] Respuesta antigua ignorada`
+      );
+      return;
+    }
 
-    console.log(
-      '📋 [PANEL DERECHO] orderItems actualizado:',
-      this.orderItems
-    );
+    this.orderItems = [...result.items];
 
-    this.panelOrderItems.set([
-      ...result.items
-    ]);
-
-    console.log(
-      '📋 [PANEL DERECHO] panelOrderItems actualizado:',
-      this.panelOrderItems()
-    );
+    this.panelOrderItems.set([...result.items]);
 
     this.selectedPending =
       this.orderItems
-        .filter(
-          i =>
-            i.status === 'PENDING'
-        )
+        .filter(item => item.status === 'PENDING')
         .reduce(
-          (n, i) =>
-            n + i.quantity,
+          (total, item) => total + item.quantity,
           0
         );
 
-    console.log(
-      '📋 [PANEL DERECHO] selectedPending:',
-      this.selectedPending
-    );
-
-    this.pendingChanged.emit(
-      this.selectedPending
-    );
+    this.pendingChanged.emit(this.selectedPending);
 
     this.cdr.detectChanges();
 
     console.log(
-      '✅ [PANEL DERECHO] detectChanges ejecutado'
+      `✅ [PANEL DERECHO #${requestId}] Lista actualizada:`,
+      this.orderItems
     );
 
   } catch (error) {
+    // Una petición antigua no puede borrar el resultado de una nueva
+    if (requestId !== this.ordersLoadRequestId) {
+      return;
+    }
+
     console.error(
       '❌ [PANEL DERECHO] Error cargando pedido:',
       error
@@ -2733,11 +2708,10 @@ private async loadOrdersForTarget(
 
     this.orderItems = [];
     this.selectedPending = 0;
+    this.panelOrderItems.set([]);
 
     this.cdr.detectChanges();
   }
-
-  console.log('📋 [PANEL DERECHO] loadOrdersForTarget FIN');
 }
   deleteSelected() {
     if (
@@ -3603,17 +3577,9 @@ private async loadOrdersForTarget(
     }
   }
 async addAlcoholItem() {
-
-  console.log('🍺 [DIALOG] Añadiendo alcohol');
-
   const added = await this.addProductToOrder(
     this.selectedAlcoholProductId,
     this.alcoholQuantity
-  );
-
-  console.log(
-    '🍺 [DIALOG] Resultado:',
-    added
   );
 
   if (added) {
@@ -3621,19 +3587,10 @@ async addAlcoholItem() {
     this.selectedAlcoholProductId = '';
   }
 }
-
 async addSoftDrinkItem() {
-
-  console.log('🥤 [DIALOG] Añadiendo refresco');
-
   const added = await this.addProductToOrder(
     this.selectedSoftDrinkProductId,
     this.softDrinkQuantity
-  );
-
-  console.log(
-    '🥤 [DIALOG] Resultado:',
-    added
   );
 
   if (added) {
