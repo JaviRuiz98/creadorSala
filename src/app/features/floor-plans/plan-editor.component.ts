@@ -144,18 +144,28 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
 
         <div class="add-order-dialog">
           <div class="section-title">Añadir producto</div>
-          <ion-select label="Producto" labelPlacement="stacked" interface="popover" [(ngModel)]="selectedProductId">
-            <ion-select-option value="">Selecciona un producto</ion-select-option>
-            @for (p of products; track p.id) { <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option> }
-          </ion-select>
-          <ion-input label="Cantidad" type="number" min="1" step="1" labelPlacement="stacked" [(ngModel)]="quantity"></ion-input>
-          <ion-button class="editor-button primary add-product-button" expand="block" [disabled]="!selectedProductId || quantity < 1" (click)="addOrderItem()">+ Añadir producto</ion-button>
+          <div class="add-product-row alcohol-row">
+            <ion-select label="🍺 Alcoholes" labelPlacement="stacked" interface="popover" [(ngModel)]="selectedAlcoholProductId">
+              <ion-select-option value="">Selecciona un alcohol</ion-select-option>
+              @for (p of alcoholProducts; track p.id) { <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option> }
+            </ion-select>
+            <ion-input label="Cantidad" type="number" min="1" step="1" labelPlacement="stacked" [(ngModel)]="alcoholQuantity"></ion-input>
+            <ion-button class="editor-button primary add-product-button" expand="block" [disabled]="!selectedAlcoholProductId || alcoholQuantity < 1" (click)="addAlcoholItem()">+ Añadir alcohol</ion-button>
+          </div>
+          <div class="add-product-row soft-row">
+            <ion-select label="🥤 Refrescos" labelPlacement="stacked" interface="popover" [(ngModel)]="selectedSoftDrinkProductId">
+              <ion-select-option value="">Selecciona un refresco</ion-select-option>
+              @for (p of softDrinkProducts; track p.id) { <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option> }
+            </ion-select>
+            <ion-input label="Cantidad" type="number" min="1" step="1" labelPlacement="stacked" [(ngModel)]="softDrinkQuantity"></ion-input>
+            <ion-button class="editor-button primary add-product-button" expand="block" [disabled]="!selectedSoftDrinkProductId || softDrinkQuantity < 1" (click)="addSoftDrinkItem()">+ Añadir refresco</ion-button>
+          </div>
         </div>
 
         <div class="attention-question">¿Ha sido atendida esta {{ selectedOrderTarget?.type === 'RESERVED' ? 'reservado' : 'mesa' }}?</div>
         <div class="dialog-actions attention-actions">
-          <ion-button class="dialog-secondary" (click)="closeOrderDialog()">No</ion-button>
-          <ion-button class="dialog-button" (click)="markAttended()">Sí, atendida</ion-button>
+          <ion-button class="dialog-secondary" (click)="markAttended(false)">No ha sido atendida</ion-button>
+          <ion-button class="dialog-button" [disabled]="orderItems.length === 0" (click)="markAttended(true)">Sí, atendida</ion-button>
         </div>
       </div>
     </div>
@@ -202,7 +212,6 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
 .orders-panel{width:340px;max-width:38vw;background:#fffaf7;overflow:auto;border-left:1px solid #dfd1c8;padding-top:68px;}
 .orders-head{padding:14px;display:flex;justify-content:space-between;color:#4e3326;border-bottom:1px solid #eadfd8;}
 .add-order{padding:14px;display:grid;gap:8px;}
-.order-backdrop{z-index:80;}
 .order-dialog{width:min( 620px,calc(100vw - 40px) );max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:#fffaf7;border:1px solid #e2d5cc;border-radius:20px;overflow:hidden;box-shadow:0 25px 70px rgba(45,30,22,.30);animation:dialogIn .18s ease-out;}
 .order-dialog-header{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #eadfd8;background:#fffaf7;}
 .order-dialog-header h2{margin:2px 0 0;color:#2d211b;font-size:24px;}
@@ -237,12 +246,15 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
 .order-list-item ion-label strong{color:#3d2a20;font-size:13px}
 .order-list-item ion-label span{color:#8b5a3c;font-size:12px}
 .order-list-item ion-label small{color:#81736b;font-size:10px}
-.add-order-dialog{padding:18px 22px;display:grid;gap:10px;border-top:1px solid #eadfd8;background:#fdf8f4;}
+.add-order-dialog{padding:18px 22px;display:grid;gap:14px;border-top:1px solid #eadfd8;background:#fdf8f4;}
+.add-product-row{display:grid;gap:8px;padding:10px;border-radius:12px;background:#fff;border:1px solid #eadfd8;}
+.alcohol-row{border-color:#eccfcf;}
+.soft-row{border-color:#cfe6d7;}
 .add-product-button{margin-top:4px;}
 .attention-question{padding:16px 22px 8px;text-align:center;color:#4e3326;font-weight:800;}
 .attention-actions{padding:8px 22px 18px;}
 .order-dialog-footer{display:flex;justify-content:flex-end;padding:12px 22px;border-top:1px solid #eadfd8;background:#fffaf7;}
-.dialog-backdrop{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(45,30,22,.38);backdrop-filter:blur(4px);}
+.dialog-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(45,30,22,.38);backdrop-filter:blur(4px);overflow-y:auto;}
 .save-dialog,.text-dialog{width:min( 380px,calc(100vw - 40px) );background:#fffaf7;border:1px solid #e2d5cc;border-radius:20px;overflow:hidden;box-shadow:0 25px 70px rgba(45,30,22,.25);animation:dialogIn .18s ease-out;}
 .text-dialog{width:min( 420px,calc(100vw - 40px) );}
 .dialog-icon{width:54px;height:54px;margin:28px auto 0;display:grid;place-items:center;border-radius:50%;background:#e9f3ec;color:#4c8b62;font-size:25px;font-weight:900;}
@@ -330,6 +342,14 @@ export class PlanEditorComponent
     '';
   quantity =
     1;
+  selectedAlcoholProductId =
+    '';
+  alcoholQuantity =
+    1;
+  selectedSoftDrinkProductId =
+    '';
+  softDrinkQuantity =
+    1;
   products:
     Product[] = [];
   productCategories:
@@ -348,6 +368,20 @@ export class PlanEditorComponent
   }
   get otherOrderItems(): Array<any> {
     return this.orderItems.filter(i => !this.isAlcohol(i) && !this.isSoftDrink(i));
+  }
+  get alcoholProducts(): Product[] {
+    return this.products.filter(p => this.isAlcoholProduct(p));
+  }
+  get softDrinkProducts(): Product[] {
+    return this.products.filter(p => this.isSoftDrinkProduct(p));
+  }
+  private isAlcoholProduct(product: any): boolean {
+    const name = this.categoryName(product);
+    return name.includes('alcohol') || name.includes('alcoh');
+  }
+  private isSoftDrinkProduct(product: any): boolean {
+    const name = this.categoryName(product);
+    return name.includes('refresco') || name.includes('bebida');
   }
   private categoryName(product: any): string {
     const category = this.productCategories.find(c => c.id === product?.category_id);
@@ -1084,6 +1118,22 @@ export class PlanEditorComponent
     }
     this.layer.draw();
   }
+  /*
+   * Colores de mesa/reservado en modo operativo:
+   *  - Sin productos              -> color normal (el mismo que en editor)
+   *  - Con productos y atendida   -> verde
+   *  - Con productos y no atendida-> rojo
+   */
+  private tableColor(
+    t: ClubTable,
+    hasProducts: boolean,
+    normalColor = '#111111'
+  ): string {
+    if (!hasProducts) {
+      return normalColor;
+    }
+    return t.attended ? '#4c8b62' : '#9f2f3a';
+  }
   private renderTable(
     t: ClubTable
   ) {
@@ -1104,9 +1154,7 @@ export class PlanEditorComponent
       fill:
         this.mode !== 'operativo'
           ? '#111111'
-          : hasProducts
-            ? ((t as any).attended ? '#4c8b62' : '#9f2f3a')
-            : '#d8892f',
+          : this.tableColor(t, hasProducts),
       stroke:
         active
           ? '#704936'
@@ -1276,9 +1324,7 @@ export class PlanEditorComponent
         fill:
           this.mode !== 'operativo'
             ? '#704936'
-            : hasProducts
-              ? ((r as any).attended ? '#4c8b62' : '#9f2f3a')
-              : '#d8892f',
+            : this.tableColor(r, hasProducts, '#704936'),
         stroke:
           active
             ? '#3d2417'
@@ -1455,19 +1501,27 @@ export class PlanEditorComponent
     this.quantity =
       1;
   }
-  async markAttended() {
+  async markAttended(attended: boolean) {
     const target = this.selectedOrderTarget;
     if (!target) return;
-    const previous = target.attended ?? false;
-    target.attended = true;
+    if (attended && this.orderItems.length === 0) {
+      // No se puede marcar como atendida una mesa/reservado sin productos.
+      return;
+    }
+    const previous = target.attended;
+    // Actualiza el objeto local al instante (el objeto es el mismo que
+    // vive dentro de this.tables / this.reserved, así que redibuja ya
+    // en el color correcto).
+    target.attended = attended;
     target.updated_at = new Date().toISOString();
+    this.render();
     try {
-      await this.floors.saveSnapshot(this.plan.id, { elements: this.elements, tables: this.tables, reserved: this.reserved } as any);
+      await this.floors.setTableAttended(target.id, attended);
       this.closeOrderDialog();
-      this.render();
     } catch (error) {
       target.attended = previous;
-      console.error('Error marcando mesa como atendida:', error);
+      this.render();
+      console.error('Error actualizando el estado de atención:', error);
     }
   }
   private async loadOrdersForTarget(
@@ -1625,7 +1679,10 @@ export class PlanEditorComponent
       );
       this.render();
     }
-    catch {}
+    catch {
+      // Silenciado a propósito: si falla el refresco de pendientes,
+      // el listener de realtime volverá a intentarlo en el próximo evento.
+    }
   }
   ngOnDestroy() {
     if (
@@ -2370,16 +2427,46 @@ export class PlanEditorComponent
     );
   }
   async addOrderItem() {
+    const added = await this.addProductToOrder(this.selectedProductId, this.quantity);
+    if (added) {
+      this.quantity = 1;
+      this.selectedProductId = '';
+    }
+  }
+  async addAlcoholItem() {
+    const added = await this.addProductToOrder(this.selectedAlcoholProductId, this.alcoholQuantity);
+    if (added) {
+      this.alcoholQuantity = 1;
+      this.selectedAlcoholProductId = '';
+    }
+  }
+  async addSoftDrinkItem() {
+    const added = await this.addProductToOrder(this.selectedSoftDrinkProductId, this.softDrinkQuantity);
+    if (added) {
+      this.softDrinkQuantity = 1;
+      this.selectedSoftDrinkProductId = '';
+    }
+  }
+  /*
+   * Añade (o incrementa, si ya existe en el pedido) un producto para la
+   * mesa/reservado seleccionado. Se usa tanto desde el dropdown de
+   * alcoholes como el de refrescos: la lógica de "ya existe -> +cantidad"
+   * vive en OrderService.addItem y es idéntica para mesa y reservado.
+   */
+  private async addProductToOrder(
+    productId: string,
+    quantity: number
+  ): Promise<boolean> {
     const target =
       this.selectedOrderTarget ??
       this.selectedTable ??
       this.selectedReserved;
     if (
       !target ||
-      !this.selectedProductId ||
-      this.quantity < 1
+      !productId ||
+      quantity < 1
     ) {
-      return;
+      return false;
     }
     const session =
       this.auth.session();
@@ -2387,26 +2474,23 @@ export class PlanEditorComponent
       console.error(
         'No hay una sesión activa.'
       );
-      return;
+      return false;
     }
     try {
-      await this.orders.addItem(target.id, this.selectedProductId, Math.floor(this.quantity), session.user.id);
-      target.updated_at = new Date().toISOString();
-      await this.floors.saveSnapshot(this.plan.id, { elements: this.elements, tables: this.tables, reserved: this.reserved } as any);
-      this.quantity =
-        1;
-      this.selectedProductId =
-        '';
+      await this.orders.addItem(target.id, productId, Math.floor(quantity), session.user.id);
       await this.loadOrdersForTarget(
         target
       );
       await this.refreshPendingMap();
+      this.render();
+      return true;
     }
     catch (error) {
       console.error(
         'Error añadiendo producto:',
         error
       );
+      return false;
     }
   }
   async changeItemQuantity(item: any, delta: number) {

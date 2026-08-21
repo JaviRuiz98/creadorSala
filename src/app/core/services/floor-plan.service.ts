@@ -220,21 +220,41 @@ export class FloorPlanService {
 
         p_elements:
           snapshot.elements.map(
-            ({
-              id,
-              ...element
-            }) => element
+            (element) => ({
+              kind: element.kind,
+              x: element.x,
+              y: element.y,
+              width: element.width,
+              height: element.height,
+              rotation: element.rotation,
+              points: element.points,
+              label: element.label,
+              z_index: element.z_index
+            })
           ),
 
         /*
-         * Se envían tanto TABLE como RESERVED.
+         * IMPORTANTE: aquí SÍ se envía el id de cada mesa/reservado
+         * (junto con type y attended). El RPC hace un upsert por id:
+         * así las mesas que se mantienen conservan su fila real en
+         * BBDD (y sus pedidos), las que ya no están en el array se
+         * borran de verdad, y las nuevas se crean con el id que ya
+         * generó el cliente. Se envían tanto TABLE como RESERVED.
          */
         p_tables:
           allTables.map(
-            ({
-              id,
-              ...table
-            }) => table
+            (table) => ({
+              id: table.id,
+              type: table.type,
+              number: table.number,
+              x: table.x,
+              y: table.y,
+              width: table.width,
+              height: table.height,
+              rotation: table.rotation,
+              shape: table.shape,
+              attended: table.attended ?? false
+            })
           )
 
       }
@@ -243,6 +263,33 @@ export class FloorPlanService {
 
     if (rpcError) {
       throw rpcError;
+    }
+  }
+
+
+  /*
+   * Actualiza el estado de "atendida" directamente en BBDD, sin tener
+   * que reenviar todo el plano (evita reconstrucciones innecesarias y
+   * que un guardado a medias del plano se lleve por delante el estado
+   * de atención de la mesa).
+   */
+  async setTableAttended(
+    tableId: string,
+    attended: boolean
+  ): Promise<void> {
+
+    const {
+      error
+    } = await this.db.client
+      .from('tables')
+      .update({
+        attended,
+        updated_at: new Date().toISOString()
+      } as never)
+      .eq('id', tableId);
+
+    if (error) {
+      throw error;
     }
   }
 

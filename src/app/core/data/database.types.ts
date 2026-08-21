@@ -110,7 +110,8 @@ export interface Database {
       floor_element_kind:
         | 'wall'
         | 'zone'
-        | 'door';
+        | 'door'
+        | 'text';
 
       order_status:
         | 'OPEN'

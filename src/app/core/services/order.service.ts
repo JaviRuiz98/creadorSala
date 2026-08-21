@@ -83,6 +83,30 @@ export class OrderService {
       orderId = (created as { id: string }).id;
     }
 
+    const { data: existingItem, error: existingError } = await this.db.client
+      .from('order_items')
+      .select('id, quantity')
+      .eq('order_id', orderId)
+      .eq('product_id', productId)
+      .neq('status', 'CANCELLED')
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+
+    if (existingItem) {
+      const current = existingItem as { id: string; quantity: number };
+      const { error: updateError } = await this.db.client
+        .from('order_items')
+        .update({
+          quantity: current.quantity + quantity,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', current.id);
+
+      if (updateError) throw updateError;
+      return;
+    }
+
     const { error: itemError } = await this.db.client
       .from('order_items')
       .insert({

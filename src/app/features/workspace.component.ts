@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import {
   IonHeader,
   IonToolbar,
@@ -197,7 +198,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   newPlanName = '';
   private channel: any;
 
-  constructor(private auth: AuthService, private floors: FloorPlanService, private product: ProductService, private orders: OrderService) {
+  constructor(private auth: AuthService, private floors: FloorPlanService, private product: ProductService, private orders: OrderService, private router: Router) {
     addIcons({ logOutOutline, addOutline, trashOutline, copyOutline, settingsOutline, closeOutline });
     this.configured = (this.floors as any).db.configured;
   }
@@ -293,5 +294,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     } catch (error) { this.toast.set(error instanceof Error ? error.message : 'No se pudo crear el producto'); }
   }
 
-  async logout(): Promise<void> { await this.auth.signOut(); }
+  async logout(): Promise<void> {
+    try {
+      await this.auth.signOut();
+    } catch (error) {
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo cerrar la sesión');
+      return;
+    }
+    // signOut() solo actualiza el estado de sesión; el guard de la ruta
+    // únicamente se re-evalúa al navegar, así que sin esto el botón
+    // "cerrar sesión" no hacía nada visible.
+    await this.router.navigateByUrl('/login');
+  }
 }
