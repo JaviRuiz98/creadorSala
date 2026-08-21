@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   IonButton,
@@ -219,7 +219,8 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
   constructor(
     private readonly floors: FloorPlanService,
     private readonly products: ProductService,
-    private readonly orders: OrderService
+    private readonly orders: OrderService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   get selectedItemCount(): number {
@@ -275,7 +276,10 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : 'No se pudo cargar la operativa';
     } finally {
-      if (version === this.loadVersion) this.loading = false;
+      if (version === this.loadVersion) {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
     }
   }
 
@@ -325,7 +329,10 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
 
   private subscribeRealtime(): void {
     this.realtimeChannel?.unsubscribe?.();
-    this.realtimeChannel = this.orders.subscribe(() => void this.load());
+    this.realtimeChannel = this.orders.subscribe(
+      () => void this.load(),
+      `table-product-panel-${this.plan.id}`
+    );
   }
 
   private isAlcohol(category?: ProductCategory): boolean {

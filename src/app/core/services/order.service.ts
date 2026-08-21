@@ -162,9 +162,9 @@ export class OrderService {
     if (error) throw error;
   }
 
-  subscribe(onChange: () => void) {
+  subscribe(onChange: () => void, channelName = 'orders-realtime') {
     return this.db.client
-      .channel('orders-realtime')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

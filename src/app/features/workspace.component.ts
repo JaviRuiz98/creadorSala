@@ -210,7 +210,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.plans.set(await this.floors.list());
       this.categories.set(await this.product.categories());
       this.products.set(await this.product.products());
-      this.channel = this.orders.subscribe(() => this.refreshOperationalData());
+      this.channel = this.orders.subscribe(() => this.refreshOperationalData(), 'workspace-orders');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'Error cargando datos');
     }
