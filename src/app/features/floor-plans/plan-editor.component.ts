@@ -3583,10 +3583,15 @@ private async loadOrdersForTarget(
       return false;
     }
     try {
-      await this.orders.addItem(target.id, productId, Math.floor(quantity), session.user.id);
-      await this.loadOrdersForTarget(target);
-      await this.refreshPendingMap();
-      this.render();
+      await this.orders.addItem(
+        target.id,
+        productId,
+        Math.floor(quantity),
+        session.user.id
+      );
+
+      await this.refreshCurrentOrder();
+
       return true;
     }
     catch (error) {
@@ -3597,6 +3602,37 @@ private async loadOrdersForTarget(
       return false;
     }
   }
+  private async refreshCurrentOrder(): Promise<void> {
+  const target =
+    this.selectedTable ??
+    this.selectedReserved ??
+    this.selectedOrderTarget;
+
+  if (!target) {
+    this.orderItems = [];
+    this.selectedPending = 0;
+    return;
+  }
+
+  const result = await this.orders.forTable(target.id);
+
+  this.orderItems = result.items.map(item => ({
+    ...item,
+    product: {
+      ...item.product
+    }
+  }));
+
+  this.selectedPending = this.orderItems
+    .filter(item => item.status === 'PENDING')
+    .reduce((total, item) => total + item.quantity, 0);
+
+  this.pendingChanged.emit(this.selectedPending);
+
+  await this.refreshPendingMap();
+
+  this.render();
+}
   async changeItemQuantity(item: any, delta: number) {
     const nextQuantity = Number(item.quantity) + delta;
     if (nextQuantity <= 0) {
