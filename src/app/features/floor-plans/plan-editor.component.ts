@@ -1,6 +1,14 @@
 import {
-  Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy,
-  Output, SimpleChanges, ViewChild
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+  ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -1525,18 +1533,14 @@ export class PlanEditorComponent
     }
     return 'Seleccionar';
   }
-  constructor(
-    private floors:
-      FloorPlanService,
-    private geometry:
-      GeometryService,
-    private auth:
-      AuthService,
-    private orders:
-      OrderService,
-    private productService:
-      ProductService
-  ) {}
+constructor(
+  private floors: FloorPlanService,
+  private geometry: GeometryService,
+  private auth: AuthService,
+  private orders: OrderService,
+  private productService: ProductService,
+  private cdr: ChangeDetectorRef
+) {}
   async ngOnChanges(
     changes: SimpleChanges
   ) {
@@ -2615,52 +2619,63 @@ export class PlanEditorComponent
       console.error('Error actualizando el estado de atención:', error);
     }
   }
-  private async loadOrdersForTarget(
-    target?: ClubTable
-  ) {
-    const orderTarget =
-      target ??
-      this.selectedOrderTarget ??
-      this.selectedTable ??
-      this.selectedReserved;
-    if (!orderTarget) {
-      this.orderItems = [];
-      this.selectedPending = 0;
-      return;
-    }
-    try {
-      const result =
-        await this.orders.forTable(
-          orderTarget.id
-        );
-      this.orderItems =
-        result.items;
-      this.selectedPending =
-        this.orderItems
-          .filter(
-            i =>
-              i.status ===
-              'PENDING'
-          )
-          .reduce(
-            (n, i) =>
-              n +
-              i.quantity,
-            0
-          );
-      this.pendingChanged.emit(
-        this.selectedPending
-      );
-    }
-    catch (error) {
-      console.error(
-        'Error cargando pedido:',
-        error
-      );
-      this.orderItems = [];
-      this.selectedPending = 0;
-    }
+private async loadOrdersForTarget(
+  target?: ClubTable
+) {
+  const orderTarget =
+    target ??
+    this.selectedOrderTarget ??
+    this.selectedTable ??
+    this.selectedReserved;
+
+  if (!orderTarget) {
+    this.orderItems = [];
+    this.selectedPending = 0;
+    this.cdr.detectChanges();
+    return;
   }
+
+  try {
+    const result =
+      await this.orders.forTable(
+        orderTarget.id
+      );
+
+    this.orderItems = [
+      ...result.items
+    ];
+
+    this.selectedPending =
+      this.orderItems
+        .filter(
+          i =>
+            i.status === 'PENDING'
+        )
+        .reduce(
+          (n, i) =>
+            n + i.quantity,
+          0
+        );
+
+    this.pendingChanged.emit(
+      this.selectedPending
+    );
+
+    // Forzar actualización inmediata del HTML
+    this.cdr.detectChanges();
+
+  } catch (error) {
+    console.error(
+      'Error cargando pedido:',
+      error
+    );
+
+    this.orderItems = [];
+    this.selectedPending = 0;
+
+    this.cdr.detectChanges();
+  }
+}
   deleteSelected() {
     if (
       this.selectedElementId
@@ -3571,10 +3586,6 @@ export class PlanEditorComponent
       await this.orders.addItem(target.id, productId, Math.floor(quantity), session.user.id);
       await this.loadOrdersForTarget(target);
       await this.refreshPendingMap();
-
-      // Forzar nueva referencia para que Angular actualice inmediatamente
-      this.orderItems = [...this.orderItems];
-
       this.render();
       return true;
     }
