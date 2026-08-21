@@ -112,7 +112,7 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
       </div>
 
       <div class="order-list">
-@for (item of panelOrderItems(); track item.id + '-' + item.quantity + '-' + item.status) {          <div class="order-list-item">
+@for (item of orderItems; track item.id + '-' + item.quantity + '-' + item.status) {        <div class="order-list-item">
             <ion-label>
               <strong>{{ item.product.name }}</strong>
               <span> × {{ item.quantity }}</span>
@@ -1456,7 +1456,6 @@ export class PlanEditorComponent
     Array<{ id: string; name: string }> = [];
   orderItems:
     Array<any> = [];
-    panelOrderItems = signal<any[]>([]);
   orderCountMap =
     new Map<string, number>();
   selectedPending =
@@ -2646,7 +2645,6 @@ private async loadOrdersForTarget(target?: ClubTable) {
 
     this.orderItems = [];
     this.selectedPending = 0;
-    this.panelOrderItems.set([]);
     this.cdr.detectChanges();
 
     return;
@@ -2675,8 +2673,6 @@ private async loadOrdersForTarget(target?: ClubTable) {
     }
 
     this.orderItems = [...result.items];
-
-    this.panelOrderItems.set([...result.items]);
 
     this.selectedPending =
       this.orderItems
@@ -2708,7 +2704,6 @@ private async loadOrdersForTarget(target?: ClubTable) {
 
     this.orderItems = [];
     this.selectedPending = 0;
-    this.panelOrderItems.set([]);
 
     this.cdr.detectChanges();
   }
