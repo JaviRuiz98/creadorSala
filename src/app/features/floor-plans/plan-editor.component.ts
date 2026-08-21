@@ -17,7 +17,9 @@ import { ProductService } from '../../core/services/product.service';
 import type {
   ClubTable, FloorPlan, FloorPlanElement, FloorSnapshot, Product
 } from '../../core/models/models';
+
 type EditorTool = 'select' | 'draw' | 'pan' | 'text';
+
 @Component({
   selector: 'app-plan-editor',
   standalone: true,
@@ -44,6 +46,7 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
         <ion-button class="editor-button" size="small" [class.active]="tool === 'text'" (click)="setTool('text')">T Texto</ion-button>
         <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ Pan</ion-button>
       </div>
+
       <div class="tool-group">
         <ion-button class="editor-button primary" size="small" (click)="saveDesign()">💾 Guardar diseño</ion-button>
         <ion-button class="editor-button danger" size="small" (click)="deleteSelected()" [disabled]="!selectedElementId && !selectedTable && !selectedReserved">🧹 Borrar</ion-button>
@@ -55,10 +58,18 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
         <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)">−</ion-button>
         <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)">+</ion-button>
       </div>
-      <span class="tool-status">Herramienta: <strong>{{ toolLabel }}</strong>
-        @if (selectedElementId) { <span class="selected-status">· Elemento seleccionado</span> }
-        @if (selectedTable) { <span class="selected-status">· Mesa {{ selectedTable.number }}</span> }
-        @if (selectedReserved) { <span class="selected-status">· Reservado {{ selectedReserved.number }}</span> }
+
+      <span class="tool-status">
+        Herramienta: <strong>{{ toolLabel }}</strong>
+        @if (selectedElementId) {
+          <span class="selected-status">· Elemento seleccionado</span>
+        }
+        @if (selectedTable) {
+          <span class="selected-status">· Mesa {{ selectedTable.number }}</span>
+        }
+        @if (selectedReserved) {
+          <span class="selected-status">· Reservado {{ selectedReserved.number }}</span>
+        }
       </span>
     } @else {
       <div class="tool-group">
@@ -70,216 +81,1296 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
     }
   </div>
 
-  <div class="canvas-area" #container [class.draw-mode]="tool === 'draw'" [class.text-mode]="tool === 'text'"
-    (pointerdown)="pointerDown($event)" (pointermove)="pointerMove($event)" (pointerup)="pointerUp($event)" (pointercancel)="pointerUp($event)"></div>
+  <div
+    class="canvas-area"
+    #container
+    [class.draw-mode]="tool === 'draw'"
+    [class.text-mode]="tool === 'text'"
+    (pointerdown)="pointerDown($event)"
+    (pointermove)="pointerMove($event)"
+    (pointerup)="pointerUp($event)"
+    (pointercancel)="pointerUp($event)">
+  </div>
 
-  @if (mode === 'operativo' && (selectedTable || selectedReserved) && !showOrderDialog) {
+@if (mode === 'operativo' && (selectedTable || selectedReserved)) {
     <aside class="orders-panel">
       <div class="orders-head">
-        <strong>{{ selectedTable ? 'Mesa' : 'Reservado' }} {{ (selectedTable || selectedReserved)?.number }}</strong>
+        <strong>
+          {{ selectedTable ? 'Mesa' : 'Reservado' }}
+          {{ (selectedTable || selectedReserved)?.number }}
+        </strong>
         <span>{{ selectedPending }} pendientes</span>
       </div>
+
       <div class="order-list">
         @for (item of orderItems; track item.id) {
           <div class="order-list-item">
-            <ion-label><strong>{{ item.product.name }}</strong><span> × {{ item.quantity }}</span><small>{{ item.status === 'PENDING' ? '🔴 Pendiente' : '🟢 Puesto' }}</small></ion-label>
+            <ion-label>
+              <strong>{{ item.product.name }}</strong>
+              <span> × {{ item.quantity }}</span>
+              <small>
+                {{ item.status === 'PENDING' ? '🔴 Pendiente' : '🟢 Puesto' }}
+              </small>
+            </ion-label>
+
             @if (item.status === 'PENDING') {
-              <ion-button class="small-action" size="small" (click)="markPlaced(item.id)">Puesta</ion-button>
+              <ion-button
+                class="small-action"
+                size="small"
+                (click)="markPlaced(item.id)">
+                Puesta
+              </ion-button>
             }
           </div>
         }
       </div>
+
       <div class="add-order">
-        <ion-select label="Producto" labelPlacement="stacked" [(ngModel)]="selectedProductId">
-          @for (p of products; track p.id) { <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option> }
+        <ion-select
+          label="Producto"
+          labelPlacement="stacked"
+          [(ngModel)]="selectedProductId">
+
+          @for (p of products; track p.id) {
+            <ion-select-option [value]="p.id">
+              {{ p.name }}
+            </ion-select-option>
+          }
         </ion-select>
-        <ion-input label="Cantidad" type="number" min="1" step="1" labelPlacement="stacked" [(ngModel)]="quantity"></ion-input>
-        <ion-button class="editor-button primary full" expand="block" [disabled]="!selectedProductId || quantity < 1" (click)="addOrderItem()">Añadir</ion-button>
+
+        <ion-input
+          label="Cantidad"
+          type="number"
+          min="1"
+          step="1"
+          labelPlacement="stacked"
+          [(ngModel)]="quantity">
+        </ion-input>
+
+        <ion-button
+          class="editor-button primary full"
+          expand="block"
+          [disabled]="!selectedProductId || quantity < 1"
+          (click)="addOrderItem()">
+          Añadir
+        </ion-button>
       </div>
     </aside>
   }
 
   @if (showOrderDialog) {
-    <div class="dialog-backdrop order-backdrop" (click)="closeOrderDialog()">
-      <div class="order-dialog attention-dialog" (click)="$event.stopPropagation()">
+    <div
+      class="dialog-backdrop order-backdrop"
+      (click)="closeOrderDialog()">
+
+      <div
+        class="order-dialog attention-dialog"
+        (click)="$event.stopPropagation()">
+
         <div class="order-dialog-header">
           <div>
-            <span class="dialog-eyebrow">{{ selectedOrderTarget?.type === 'RESERVED' ? 'RESERVADO' : 'MESA' }}</span>
+            <span class="dialog-eyebrow">
+              {{ selectedOrderTarget?.type === 'RESERVED' ? 'RESERVADO' : 'MESA' }}
+            </span>
+
             <h2>{{ selectedOrderTarget?.number }}</h2>
           </div>
-          <ion-button class="close-button" fill="clear" (click)="closeOrderDialog()">✕</ion-button>
+
+          <ion-button
+            class="close-button"
+            fill="clear"
+            (click)="closeOrderDialog()">
+            ✕
+          </ion-button>
         </div>
 
         <div class="current-order">
           <div class="section-title">Pedido actual</div>
+
           @if (orderItems.length === 0) {
-            <div class="empty-order"><span>🛒</span><p>No hay productos en el pedido.</p></div>
+            <div class="empty-order">
+              <span>🛒</span>
+              <p>No hay productos en el pedido.</p>
+            </div>
           } @else {
+
             @if (alcoholItems.length) {
-              <div class="product-section alcohol-section"><div class="product-section-title">🍺 Alcoholes</div>
-                @for (item of alcoholItems; track item.id) { <div class="order-item">
-                  <div class="order-item-info"><strong>{{ item.product.name }}</strong><span>{{ item.status === 'PENDING' ? '🔴' : '🟢' }}</span></div>
-                  <div class="quantity-editor"><ion-button size="small" class="qty-button" (click)="changeItemQuantity(item, -1)">−</ion-button><span>{{ item.quantity }}</span><ion-button size="small" class="qty-button" (click)="changeItemQuantity(item, 1)">+</ion-button><ion-button size="small" class="remove-item" (click)="removeOrderItem(item)">✕</ion-button></div>
-                </div> }
+              <div class="product-section alcohol-section">
+
+                <div class="product-section-title">
+                  🍺 Alcoholes
+                </div>
+
+                @for (item of alcoholItems; track item.id) {
+                  <div class="order-item">
+
+                    <div class="order-item-info">
+                      <strong>{{ item.product.name }}</strong>
+                      <span>
+                        {{ item.status === 'PENDING' ? '🔴' : '🟢' }}
+                      </span>
+                    </div>
+
+                    <div class="quantity-editor">
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, -1)">
+                        −
+                      </ion-button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, 1)">
+                        +
+                      </ion-button>
+
+                      <ion-button
+                        size="small"
+                        class="remove-item"
+                        (click)="removeOrderItem(item)">
+                        ✕
+                      </ion-button>
+                    </div>
+
+                  </div>
+                }
               </div>
             }
+
             @if (softDrinkItems.length) {
-              <div class="product-section soft-section"><div class="product-section-title">🥤 Refrescos</div>
-                @for (item of softDrinkItems; track item.id) { <div class="order-item">
-                  <div class="order-item-info"><strong>{{ item.product.name }}</strong><span>{{ item.status === 'PENDING' ? '🔴' : '🟢' }}</span></div>
-                  <div class="quantity-editor"><ion-button size="small" class="qty-button" (click)="changeItemQuantity(item, -1)">−</ion-button><span>{{ item.quantity }}</span><ion-button size="small" class="qty-button" (click)="changeItemQuantity(item, 1)">+</ion-button><ion-button size="small" class="remove-item" (click)="removeOrderItem(item)">✕</ion-button></div>
-                </div> }
+              <div class="product-section soft-section">
+
+                <div class="product-section-title">
+                  🥤 Refrescos
+                </div>
+
+                @for (item of softDrinkItems; track item.id) {
+                  <div class="order-item">
+
+                    <div class="order-item-info">
+                      <strong>{{ item.product.name }}</strong>
+                      <span>
+                        {{ item.status === 'PENDING' ? '🔴' : '🟢' }}
+                      </span>
+                    </div>
+
+                    <div class="quantity-editor">
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, -1)">
+                        −
+                      </ion-button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, 1)">
+                        +
+                      </ion-button>
+
+                      <ion-button
+                        size="small"
+                        class="remove-item"
+                        (click)="removeOrderItem(item)">
+                        ✕
+                      </ion-button>
+                    </div>
+
+                  </div>
+                }
               </div>
             }
+
             @if (otherOrderItems.length) {
-              <div class="product-section"><div class="product-section-title">📦 Otros</div>
-                @for (item of otherOrderItems; track item.id) { <div class="order-item">
-                  <div class="order-item-info"><strong>{{ item.product.name }}</strong><span>{{ item.status === 'PENDING' ? '🔴' : '🟢' }}</span></div>
-                  <div class="quantity-editor"><ion-button size="small" class="qty-button" (click)="changeItemQuantity(item, -1)">−</ion-button><span>{{ item.quantity }}</span><ion-button size="small" class="qty-button" (click)="changeItemQuantity(item, 1)">+</ion-button><ion-button size="small" class="remove-item" (click)="removeOrderItem(item)">✕</ion-button></div>
-                </div> }
+              <div class="product-section">
+
+                <div class="product-section-title">
+                  📦 Otros
+                </div>
+
+                @for (item of otherOrderItems; track item.id) {
+                  <div class="order-item">
+
+                    <div class="order-item-info">
+                      <strong>{{ item.product.name }}</strong>
+                      <span>
+                        {{ item.status === 'PENDING' ? '🔴' : '🟢' }}
+                      </span>
+                    </div>
+
+                    <div class="quantity-editor">
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, -1)">
+                        −
+                      </ion-button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, 1)">
+                        +
+                      </ion-button>
+
+                      <ion-button
+                        size="small"
+                        class="remove-item"
+                        (click)="removeOrderItem(item)">
+                        ✕
+                      </ion-button>
+                    </div>
+
+                  </div>
+                }
               </div>
             }
           }
         </div>
 
         <div class="add-order-dialog">
-          <div class="section-title">Añadir producto</div>
-          <div class="add-product-row alcohol-row">
-            <ion-select label="🍺 Alcoholes" labelPlacement="stacked" interface="popover" [(ngModel)]="selectedAlcoholProductId">
-              <ion-select-option value="">Selecciona un alcohol</ion-select-option>
-              @for (p of alcoholProducts; track p.id) { <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option> }
-            </ion-select>
-            <ion-input label="Cantidad" type="number" min="1" step="1" labelPlacement="stacked" [(ngModel)]="alcoholQuantity"></ion-input>
-            <ion-button class="editor-button primary add-product-button" expand="block" [disabled]="!selectedAlcoholProductId || alcoholQuantity < 1" (click)="addAlcoholItem()">+ Añadir alcohol</ion-button>
+
+          <div class="section-title">
+            Añadir producto
           </div>
-          <div class="add-product-row soft-row">
-            <ion-select label="🥤 Refrescos" labelPlacement="stacked" interface="popover" [(ngModel)]="selectedSoftDrinkProductId">
-              <ion-select-option value="">Selecciona un refresco</ion-select-option>
-              @for (p of softDrinkProducts; track p.id) { <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option> }
+
+          <div class="add-product-row alcohol-row">
+
+            <ion-select
+              label="🍺 Alcoholes"
+              labelPlacement="stacked"
+              interface="popover"
+              [(ngModel)]="selectedAlcoholProductId">
+
+              <ion-select-option value="">
+                Selecciona un alcohol
+              </ion-select-option>
+
+              @for (p of alcoholProducts; track p.id) {
+                <ion-select-option [value]="p.id">
+                  {{ p.name }}
+                </ion-select-option>
+              }
             </ion-select>
-            <ion-input label="Cantidad" type="number" min="1" step="1" labelPlacement="stacked" [(ngModel)]="softDrinkQuantity"></ion-input>
-            <ion-button class="editor-button primary add-product-button" expand="block" [disabled]="!selectedSoftDrinkProductId || softDrinkQuantity < 1" (click)="addSoftDrinkItem()">+ Añadir refresco</ion-button>
+
+            <ion-input
+              label="Cantidad"
+              type="number"
+              min="1"
+              step="1"
+              labelPlacement="stacked"
+              [(ngModel)]="alcoholQuantity">
+            </ion-input>
+
+            <ion-button
+              class="editor-button primary add-product-button"
+              expand="block"
+              [disabled]="!selectedAlcoholProductId || alcoholQuantity < 1"
+              (click)="addAlcoholItem()">
+              + Añadir alcohol
+            </ion-button>
+
+          </div>
+
+          <div class="add-product-row soft-row">
+
+            <ion-select
+              label="🥤 Refrescos"
+              labelPlacement="stacked"
+              interface="popover"
+              [(ngModel)]="selectedSoftDrinkProductId">
+
+              <ion-select-option value="">
+                Selecciona un refresco
+              </ion-select-option>
+
+              @for (p of softDrinkProducts; track p.id) {
+                <ion-select-option [value]="p.id">
+                  {{ p.name }}
+                </ion-select-option>
+              }
+            </ion-select>
+
+            <ion-input
+              label="Cantidad"
+              type="number"
+              min="1"
+              step="1"
+              labelPlacement="stacked"
+              [(ngModel)]="softDrinkQuantity">
+            </ion-input>
+
+            <ion-button
+              class="editor-button primary add-product-button"
+              expand="block"
+              [disabled]="!selectedSoftDrinkProductId || softDrinkQuantity < 1"
+              (click)="addSoftDrinkItem()">
+              + Añadir refresco
+            </ion-button>
+
           </div>
         </div>
 
-        <div class="attention-question">¿Ha sido atendida esta {{ selectedOrderTarget?.type === 'RESERVED' ? 'reservado' : 'mesa' }}?</div>
-        <div class="dialog-actions attention-actions">
-          <ion-button class="dialog-secondary" (click)="markAttended(false)">No ha sido atendida</ion-button>
-          <ion-button class="dialog-button" [disabled]="orderItems.length === 0" (click)="markAttended(true)">Sí, atendida</ion-button>
+        <div class="attention-question">
+          ¿Ha sido atendida esta
+          {{ selectedOrderTarget?.type === 'RESERVED' ? 'reservado' : 'mesa' }}?
         </div>
+
+        <div class="dialog-actions attention-actions">
+          <ion-button
+            class="dialog-secondary"
+            (click)="markAttended(false)">
+            No ha sido atendida
+          </ion-button>
+
+          <ion-button
+            class="dialog-button"
+            [disabled]="orderItems.length === 0"
+            (click)="markAttended(true)">
+            Sí, atendida
+          </ion-button>
+        </div>
+
       </div>
     </div>
   }
 
   @if (showTextDialog) {
-    <div class="dialog-backdrop" (click)="closeTextDialog()"><div class="text-dialog" (click)="$event.stopPropagation()">
-      <div class="dialog-icon text-icon">T</div><div class="dialog-content"><span class="dialog-eyebrow">EDITOR DE PLANO</span><h2>Añadir texto</h2><p>Introduce el texto que quieres colocar en el plano.</p>
-      <ion-input class="text-input" label="Texto" labelPlacement="stacked" placeholder="Ej. Barra, Cocina, Entrada..." [(ngModel)]="newText" (keydown.enter)="confirmAddText()"></ion-input>
-      <div class="dialog-actions"><ion-button class="dialog-secondary" (click)="closeTextDialog()">Cancelar</ion-button><ion-button class="dialog-button" [disabled]="!newText.trim()" (click)="confirmAddText()">Añadir texto</ion-button></div>
+    <div
+      class="dialog-backdrop"
+      (click)="closeTextDialog()">
+
+      <div
+        class="text-dialog"
+        (click)="$event.stopPropagation()">
+
+        <div class="dialog-icon text-icon">
+          T
+        </div>
+
+        <div class="dialog-content">
+
+          <span class="dialog-eyebrow">
+            EDITOR DE PLANO
+          </span>
+
+          <h2>Añadir texto</h2>
+
+          <p>
+            Introduce el texto que quieres colocar en el plano.
+          </p>
+
+          <ion-input
+            class="text-input"
+            label="Texto"
+            labelPlacement="stacked"
+            placeholder="Ej. Barra, Cocina, Entrada..."
+            [(ngModel)]="newText"
+            (keydown.enter)="confirmAddText()">
+          </ion-input>
+
+          <div class="dialog-actions">
+
+            <ion-button
+              class="dialog-secondary"
+              (click)="closeTextDialog()">
+              Cancelar
+            </ion-button>
+
+            <ion-button
+              class="dialog-button"
+              [disabled]="!newText.trim()"
+              (click)="confirmAddText()">
+              Añadir texto
+            </ion-button>
+
+          </div>
+
+        </div>
       </div>
-    </div></div>
+    </div>
   }
 
   @if (showSaveDialog) {
-    <div class="dialog-backdrop" (click)="closeSaveDialog()"><div class="save-dialog" (click)="$event.stopPropagation()">
-      <div class="dialog-icon">✓</div><div class="dialog-content"><span class="dialog-eyebrow">SALA CHOCOLATTE</span><h2>Diseño guardado</h2><p>El diseño del plano se ha guardado correctamente.</p><ion-button class="dialog-button" expand="block" (click)="closeSaveDialog()">Continuar</ion-button></div>
-    </div></div>
+    <div
+      class="dialog-backdrop"
+      (click)="closeSaveDialog()">
+
+      <div
+        class="save-dialog"
+        (click)="$event.stopPropagation()">
+
+        <div class="dialog-icon">
+          ✓
+        </div>
+
+        <div class="dialog-content">
+
+          <span class="dialog-eyebrow">
+            SALA CHOCOLATTE
+          </span>
+
+          <h2>Diseño guardado</h2>
+
+          <p>
+            El diseño del plano se ha guardado correctamente.
+          </p>
+
+          <ion-button
+            class="dialog-button"
+            expand="block"
+            (click)="closeSaveDialog()">
+            Continuar
+          </ion-button>
+
+        </div>
+      </div>
+    </div>
   }
 </div>
 `,
-  styles: [`.editor-shell{position:relative;display:flex;min-height:65vh;overflow:hidden;background:#f4eee9;border-radius:18px;border:1px solid #e3d5ca;box-shadow:0 12px 35px rgba(70,43,29,.08);}
-.editor-toolbar{position:absolute;z-index:20;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;pointer-events:none;}
-.editor-toolbar > *{pointer-events:auto;}
-.tool-group{display:flex;gap:5px;flex-wrap:wrap;padding:5px;background:rgba(255,252,249,.96);border:1px solid #e2d5cc;border-radius:12px;box-shadow:0 5px 18px rgba(70,43,29,.10);backdrop-filter:blur(8px);}
-.editor-button{--background:#fffaf6;--background-hover:#f4e7de;--background-activated:#ead8ca;--color:#5b3928;--border-color:#d8c4b6;--border-style:solid;--border-width:1px;--border-radius:9px;--box-shadow:none;font-weight:700;font-size:12px;margin:0;}
-.editor-button:hover{--background:#f4e7de;}
-.editor-button.active{--background:#704936;--color:#ffffff;--border-color:#704936;}
-.editor-button.primary{--background:#6b4430;--color:#ffffff;--border-color:#6b4430;}
-.editor-button.primary:hover{--background:#593624;}
-.editor-button.danger{--color:#8c3f3f;--border-color:#d9b7b0;}
-.editor-button.danger:hover{--background:#f8e8e5;--color:#783333;}
-.editor-button.reserved-button{--background:#7a4b2e;--color:#ffffff;--border-color:#7a4b2e;}
-.editor-button.reserved-button:hover{--background:#653c24;}
-.editor-button.full{width:100%;}
-.editor-button.icon-button{min-width:38px;}
-.editor-button:disabled{opacity:.45;}
-.tool-status{background:rgba(255,252,249,.96);padding:9px 12px;border-radius:10px;border:1px solid #e2d5cc;color:#725e52;font-size:12px;box-shadow:0 5px 18px rgba(70,43,29,.08);}
-.tool-status strong{color:#4f3021;}
-.selected-status{color:#8b5a3c;font-weight:700;}
-.canvas-area{flex:1;min-height:65vh;touch-action:none;cursor:default;background:#ffffff;background-image:linear-gradient( #f1eeeb 1px,transparent 1px ),linear-gradient( 90deg,#f1eeeb 1px,transparent 1px );background-size:25px 25px;}
-.canvas-area.draw-mode{cursor:crosshair;}
-.canvas-area.text-mode{cursor:text;}
-.orders-panel{width:340px;max-width:38vw;background:#fffaf7;overflow:auto;border-left:1px solid #dfd1c8;padding-top:68px;}
-.orders-head{padding:14px;display:flex;justify-content:space-between;color:#4e3326;border-bottom:1px solid #eadfd8;}
-.add-order{padding:14px;display:grid;gap:8px;}
-.order-dialog{width:min( 620px,calc(100vw - 40px) );max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:#fffaf7;border:1px solid #e2d5cc;border-radius:20px;overflow:hidden;box-shadow:0 25px 70px rgba(45,30,22,.30);animation:dialogIn .18s ease-out;}
-.order-dialog-header{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #eadfd8;background:#fffaf7;}
-.order-dialog-header h2{margin:2px 0 0;color:#2d211b;font-size:24px;}
-.close-button{--color:#725e52;--background:transparent;--box-shadow:none;font-size:18px;margin:0;}
-.current-order{padding:18px 22px;overflow-y:auto;flex:1;min-height:0;max-height:55vh;}
-.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;color:#4e3326;font-size:15px;font-weight:800;}
-.pending-badge{padding:4px 8px;border-radius:999px;background:#f5dfdf;color:#9f2f3a;font-size:11px;font-weight:800;}
-.empty-order{padding:24px 15px;text-align:center;border:1px dashed #d8c4b6;border-radius:12px;background:#fff;}
-.empty-order span{display:block;font-size:28px;margin-bottom:6px;}
-.empty-order p{margin:0;color:#81736b;font-size:13px;}
-.order-items{display:grid;gap:8px;}
-.order-item{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 14px;background:#ffffff;border:1px solid #eadfd8;border-radius:11px;}
-.order-item-info{display:flex;align-items:center;gap:8px;min-width:0;}
-.order-item-info strong{color:#3d2a20;font-size:14px;}
-.order-item-info span{color:#8b5a3c;font-size:13px;font-weight:800;}
-.order-item-status{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:11px;font-weight:700;}
-.order-item-status.pending{color:#9f2f3a;}
-.order-item-status.placed{color:#4c8b62;}
-.small-action{--background:#f4e7de;--color:#5b3928;--border-radius:8px;--box-shadow:none;font-size:10px;margin:0;height:28px;}
 
-.product-section{display:grid;gap:8px;margin-bottom:14px}
-.product-section-title{padding:8px 10px;border-radius:9px;font-size:12px;font-weight:900;letter-spacing:.04em;background:#f4e7de;color:#5b3928}
-.alcohol-section .product-section-title{background:#f3dfdf;color:#8f3038}
-.soft-section .product-section-title{background:#e2f0e7;color:#3d7652}
-.quantity-editor{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.quantity-editor>span{min-width:24px;text-align:center;font-weight:800;color:#4e3326}
-.qty-button{--background:#f4e7de;--color:#5b3928;--border-radius:7px;--box-shadow:none;margin:0;height:28px;min-width:28px}
-.remove-item{--background:#f5dfdf;--color:#9f2f3a;--border-radius:7px;--box-shadow:none;margin:0;height:28px;min-width:28px}
-.order-list{padding:0 10px;max-height:35vh;overflow:auto}
-.order-list-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 4px;border-bottom:1px solid #eadfd8}
-.order-list-item ion-label{display:grid;gap:2px}
-.order-list-item ion-label strong{color:#3d2a20;font-size:13px}
-.order-list-item ion-label span{color:#8b5a3c;font-size:12px}
-.order-list-item ion-label small{color:#81736b;font-size:10px}
-.add-order-dialog{padding:18px 22px;display:grid;gap:14px;border-top:1px solid #eadfd8;background:#fdf8f4;}
-.add-product-row{display:grid;gap:8px;padding:10px;border-radius:12px;background:#fff;border:1px solid #eadfd8;}
-.alcohol-row{border-color:#eccfcf;}
-.soft-row{border-color:#cfe6d7;}
-.add-product-button{margin-top:4px;}
-.attention-question{padding:16px 22px 8px;text-align:center;color:#4e3326;font-weight:800;}
-.attention-actions{padding:8px 22px 18px;}
-.order-dialog-footer{display:flex;justify-content:flex-end;padding:12px 22px;border-top:1px solid #eadfd8;background:#fffaf7;}
-.dialog-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(45,30,22,.38);backdrop-filter:blur(4px);overflow-y:auto;}
-.save-dialog,.text-dialog{width:min( 380px,calc(100vw - 40px) );background:#fffaf7;border:1px solid #e2d5cc;border-radius:20px;overflow:hidden;box-shadow:0 25px 70px rgba(45,30,22,.25);animation:dialogIn .18s ease-out;}
-.text-dialog{width:min( 420px,calc(100vw - 40px) );}
-.dialog-icon{width:54px;height:54px;margin:28px auto 0;display:grid;place-items:center;border-radius:50%;background:#e9f3ec;color:#4c8b62;font-size:25px;font-weight:900;}
-.dialog-icon.text-icon{background:#f1e5dc;color:#6b4430;}
-.dialog-content{padding:18px 28px 26px;text-align:center;}
-.dialog-eyebrow{display:block;margin-bottom:7px;color:#9a6749;font-size:10px;font-weight:900;letter-spacing:.14em;}
-.dialog-content h2{margin:0 0 8px;color:#2d211b;font-size:23px;}
-.dialog-content p{margin:0 0 22px;color:#81736b;font-size:14px;line-height:1.5;}
-.text-input{display:block;margin-bottom:20px;text-align:left;--background:#ffffff;--border-color:#d8c4b6;--border-radius:10px;--color:#3d2a20;--padding-start:12px;--padding-end:12px;--highlight-color-focused:#6b4430;}
-.dialog-actions{display:flex;gap:8px;justify-content:flex-end;}
-.dialog-button{--background:#6b4430;--background-hover:#593624;--color:#fff;--border-radius:10px;font-weight:700;margin:0;flex:1;}
-.dialog-secondary{--background:#f4e7de;--background-hover:#ead8ca;--color:#5b3928;--border-radius:10px;font-weight:700;margin:0;}
-@keyframes dialogIn{from{opacity:0;transform:translateY(8px) scale(.98);}
-to{opacity:1;transform:translateY(0) scale(1);}
+  styles: [`
+
+.editor-shell{
+  position:relative;
+  display:flex;
+  min-height:65vh;
+  overflow:hidden;
+  background:#f4eee9;
+  border-radius:18px;
+  border:1px solid #e3d5ca;
+  box-shadow:0 12px 35px rgba(70,43,29,.08);
 }
-@media (max-width:800px){.editor-shell{min-height:70vh;}
-.orders-panel{position:absolute;right:0;top:0;bottom:0;width:min( 380px,92vw );max-width:none;z-index:30;box-shadow:-8px 0 24px rgba(45,30,22,.18);}
-.tool-status{display:none;}
-.editor-toolbar{top:8px;left:8px;right:8px;}
-.dialog-actions{flex-direction:column;}
-.dialog-secondary,.dialog-button{width:100%;}
-.order-dialog{width:calc(100vw - 20px);max-height:calc(100vh - 20px);}
-.order-item{align-items:flex-start;flex-direction:column;}
-.order-item-status{width:100%;justify-content:space-between;}
+
+.editor-toolbar{
+  position:absolute;
+  z-index:20;
+  top:12px;
+  left:12px;
+  right:12px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+  pointer-events:none;
 }
+
+.editor-toolbar > *{
+  pointer-events:auto;
+}
+
+.tool-group{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  padding:5px;
+  background:rgba(255,252,249,.96);
+  border:1px solid #e2d5cc;
+  border-radius:12px;
+  box-shadow:0 5px 18px rgba(70,43,29,.10);
+  backdrop-filter:blur(8px);
+}
+
+.editor-button{
+  --background:#fffaf6;
+  --background-hover:#f4e7de;
+  --background-activated:#ead8ca;
+  --color:#5b3928;
+  --border-color:#d8c4b6;
+  --border-style:solid;
+  --border-width:1px;
+  --border-radius:9px;
+  --box-shadow:none;
+  font-weight:700;
+  font-size:12px;
+  margin:0;
+}
+
+.editor-button:hover{
+  --background:#f4e7de;
+}
+
+.editor-button.active{
+  --background:#704936;
+  --color:#ffffff;
+  --border-color:#704936;
+}
+
+.editor-button.primary{
+  --background:#6b4430;
+  --color:#ffffff;
+  --border-color:#6b4430;
+}
+
+.editor-button.primary:hover{
+  --background:#593624;
+}
+
+.editor-button.danger{
+  --color:#8c3f3f;
+  --border-color:#d9b7b0;
+}
+
+.editor-button.danger:hover{
+  --background:#f8e8e5;
+  --color:#783333;
+}
+
+.editor-button.reserved-button{
+  --background:#7a4b2e;
+  --color:#ffffff;
+  --border-color:#7a4b2e;
+}
+
+.editor-button.reserved-button:hover{
+  --background:#653c24;
+}
+
+.editor-button.full{
+  width:100%;
+}
+
+.editor-button.icon-button{
+  min-width:38px;
+}
+
+.editor-button:disabled{
+  opacity:.45;
+}
+
+.tool-status{
+  background:rgba(255,252,249,.96);
+  padding:9px 12px;
+  border-radius:10px;
+  border:1px solid #e2d5cc;
+  color:#725e52;
+  font-size:12px;
+  box-shadow:0 5px 18px rgba(70,43,29,.08);
+}
+
+.tool-status strong{
+  color:#4f3021;
+}
+
+.selected-status{
+  color:#8b5a3c;
+  font-weight:700;
+}
+
+.canvas-area{
+  flex:1;
+  min-height:65vh;
+  touch-action:none;
+  cursor:default;
+  background:#ffffff;
+  background-image:
+    linear-gradient(#f1eeeb 1px,transparent 1px),
+    linear-gradient(90deg,#f1eeeb 1px,transparent 1px);
+  background-size:25px 25px;
+}
+
+.canvas-area.draw-mode{
+  cursor:crosshair;
+}
+
+.canvas-area.text-mode{
+  cursor:text;
+}
+
+.orders-panel{
+  width:340px;
+  max-width:38vw;
+  background:#fffaf7;
+  overflow:auto;
+  border-left:1px solid #dfd1c8;
+  padding-top:68px;
+}
+
+.orders-head{
+  padding:14px;
+  display:flex;
+  justify-content:space-between;
+  color:#4e3326;
+  border-bottom:1px solid #eadfd8;
+}
+
+.add-order{
+  padding:14px;
+  display:grid;
+  gap:8px;
+}
+
+/* =========================================================
+   DIALOGO PEDIDO
+   ========================================================= */
+
+.dialog-backdrop{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:99999 !important;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  width:100vw;
+  height:100vh;
+
+  box-sizing:border-box;
+  padding:12px;
+
+  background:rgba(45,30,22,.38);
+  backdrop-filter:blur(4px);
+
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+
+.order-backdrop{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:99999 !important;
+}
+
+.order-dialog{
+  position:relative;
+  z-index:100000;
+
+  width:min(620px,calc(100vw - 24px));
+  max-width:620px;
+
+  max-height:calc(100vh - 24px);
+
+  display:flex;
+  flex-direction:column;
+
+  margin:auto;
+
+  background:#fffaf7;
+  border:1px solid #e2d5cc;
+  border-radius:20px;
+
+  overflow:hidden;
+
+  box-shadow:0 25px 70px rgba(45,30,22,.30);
+
+  animation:dialogIn .18s ease-out;
+
+  box-sizing:border-box;
+}
+
+.order-dialog-header{
+  flex-shrink:0;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:16px 20px;
+
+  border-bottom:1px solid #eadfd8;
+  background:#fffaf7;
+}
+
+.order-dialog-header h2{
+  margin:2px 0 0;
+  color:#2d211b;
+  font-size:24px;
+}
+
+.close-button{
+  --color:#725e52;
+  --background:transparent;
+  --box-shadow:none;
+  font-size:18px;
+  margin:0;
+}
+
+/* =========================================================
+   PEDIDO ACTUAL
+   ========================================================= */
+
+.current-order{
+  padding:14px 20px;
+
+  overflow-y:auto;
+
+  flex:1;
+  min-height:0;
+
+  max-height:45vh;
+}
+
+.section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+
+  margin-bottom:10px;
+
+  color:#4e3326;
+  font-size:15px;
+  font-weight:800;
+}
+
+.pending-badge{
+  padding:4px 8px;
+  border-radius:999px;
+  background:#f5dfdf;
+  color:#9f2f3a;
+  font-size:11px;
+  font-weight:800;
+}
+
+.empty-order{
+  padding:20px 15px;
+  text-align:center;
+
+  border:1px dashed #d8c4b6;
+  border-radius:12px;
+
+  background:#fff;
+}
+
+.empty-order span{
+  display:block;
+  font-size:28px;
+  margin-bottom:6px;
+}
+
+.empty-order p{
+  margin:0;
+  color:#81736b;
+  font-size:13px;
+}
+
+.order-items{
+  display:grid;
+  gap:8px;
+}
+
+.order-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+
+  padding:9px 12px;
+
+  background:#ffffff;
+  border:1px solid #eadfd8;
+  border-radius:11px;
+}
+
+.order-item-info{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.order-item-info strong{
+  color:#3d2a20;
+  font-size:14px;
+}
+
+.order-item-info span{
+  color:#8b5a3c;
+  font-size:13px;
+  font-weight:800;
+}
+
+.order-item-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+  font-size:11px;
+  font-weight:700;
+}
+
+.order-item-status.pending{
+  color:#9f2f3a;
+}
+
+.order-item-status.placed{
+  color:#4c8b62;
+}
+
+.small-action{
+  --background:#f4e7de;
+  --color:#5b3928;
+  --border-radius:8px;
+  --box-shadow:none;
+
+  font-size:10px;
+  margin:0;
+  height:28px;
+}
+
+/* =========================================================
+   SECCIONES ALCOHOL / REFRESCOS
+   ========================================================= */
+
+.product-section{
+  display:grid;
+  gap:6px;
+  margin-bottom:10px;
+}
+
+.product-section-title{
+  padding:6px 9px;
+
+  border-radius:8px;
+
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.04em;
+
+  background:#f4e7de;
+  color:#5b3928;
+}
+
+.alcohol-section .product-section-title{
+  background:#f3dfdf;
+  color:#8f3038;
+}
+
+.soft-section .product-section-title{
+  background:#e2f0e7;
+  color:#3d7652;
+}
+
+.quantity-editor{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+}
+
+.quantity-editor > span{
+  min-width:24px;
+  text-align:center;
+  font-weight:800;
+  color:#4e3326;
+}
+
+.qty-button{
+  --background:#f4e7de;
+  --color:#5b3928;
+  --border-radius:7px;
+  --box-shadow:none;
+
+  margin:0;
+  height:28px;
+  min-width:28px;
+}
+
+.remove-item{
+  --background:#f5dfdf;
+  --color:#9f2f3a;
+  --border-radius:7px;
+  --box-shadow:none;
+
+  margin:0;
+  height:28px;
+  min-width:28px;
+}
+
+.order-list{
+  padding:0 10px;
+  max-height:35vh;
+  overflow:auto;
+}
+
+.order-list-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+
+  padding:9px 4px;
+
+  border-bottom:1px solid #eadfd8;
+}
+
+.order-list-item ion-label{
+  display:grid;
+  gap:2px;
+}
+
+.order-list-item ion-label strong{
+  color:#3d2a20;
+  font-size:13px;
+}
+
+.order-list-item ion-label span{
+  color:#8b5a3c;
+  font-size:12px;
+}
+
+.order-list-item ion-label small{
+  color:#81736b;
+  font-size:10px;
+}
+
+/* =========================================================
+   AÑADIR PRODUCTOS
+   ========================================================= */
+
+.add-order-dialog{
+  flex-shrink:0;
+
+  padding:12px 20px;
+
+  display:grid;
+  gap:8px;
+
+  border-top:1px solid #eadfd8;
+  background:#fdf8f4;
+}
+
+.add-product-row{
+  display:grid;
+
+  /*
+   * Antes:
+   * selector
+   * cantidad
+   * boton
+   *
+   * Ahora:
+   * selector | cantidad | boton
+   */
+  grid-template-columns:minmax(0,1fr) 82px auto;
+
+  align-items:end;
+
+  gap:8px;
+
+  padding:7px 8px;
+
+  border-radius:10px;
+
+  background:#fff;
+  border:1px solid #eadfd8;
+
+  min-height:0;
+}
+
+.alcohol-row{
+  border-color:#eccfcf;
+}
+
+.soft-row{
+  border-color:#cfe6d7;
+}
+
+.add-product-button{
+  margin:0;
+
+  white-space:nowrap;
+
+  height:40px;
+}
+
+/* =========================================================
+   PARTE INFERIOR DEL DIALOGO
+   ========================================================= */
+
+.attention-question{
+  flex-shrink:0;
+
+  padding:10px 20px 6px;
+
+  text-align:center;
+
+  color:#4e3326;
+  font-weight:800;
+}
+
+.attention-actions{
+  flex-shrink:0;
+
+  padding:6px 20px 14px;
+}
+
+.order-dialog-footer{
+  display:flex;
+  justify-content:flex-end;
+
+  padding:12px 22px;
+
+  border-top:1px solid #eadfd8;
+  background:#fffaf7;
+}
+
+/* =========================================================
+   OTROS DIALOGOS
+   ========================================================= */
+
+.save-dialog,
+.text-dialog{
+  width:min(380px,calc(100vw - 40px));
+
+  background:#fffaf7;
+  border:1px solid #e2d5cc;
+  border-radius:20px;
+  overflow:hidden;
+
+  box-shadow:0 25px 70px rgba(45,30,22,.25);
+
+  animation:dialogIn .18s ease-out;
+}
+
+.text-dialog{
+  width:min(420px,calc(100vw - 40px));
+}
+
+.dialog-icon{
+  width:54px;
+  height:54px;
+
+  margin:28px auto 0;
+
+  display:grid;
+  place-items:center;
+
+  border-radius:50%;
+
+  background:#e9f3ec;
+  color:#4c8b62;
+
+  font-size:25px;
+  font-weight:900;
+}
+
+.dialog-icon.text-icon{
+  background:#f1e5dc;
+  color:#6b4430;
+}
+
+.dialog-content{
+  padding:18px 28px 26px;
+  text-align:center;
+}
+
+.dialog-eyebrow{
+  display:block;
+
+  margin-bottom:7px;
+
+  color:#9a6749;
+
+  font-size:10px;
+  font-weight:900;
+
+  letter-spacing:.14em;
+}
+
+.dialog-content h2{
+  margin:0 0 8px;
+
+  color:#2d211b;
+  font-size:23px;
+}
+
+.dialog-content p{
+  margin:0 0 22px;
+
+  color:#81736b;
+
+  font-size:14px;
+  line-height:1.5;
+}
+
+.text-input{
+  display:block;
+
+  margin-bottom:20px;
+  text-align:left;
+
+  --background:#ffffff;
+  --border-color:#d8c4b6;
+  --border-radius:10px;
+  --color:#3d2a20;
+  --padding-start:12px;
+  --padding-end:12px;
+  --highlight-color-focused:#6b4430;
+}
+
+.dialog-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+}
+
+.dialog-button{
+  --background:#6b4430;
+  --background-hover:#593624;
+  --color:#fff;
+  --border-radius:10px;
+
+  font-weight:700;
+  margin:0;
+
+  flex:1;
+}
+
+.dialog-secondary{
+  --background:#f4e7de;
+  --background-hover:#ead8ca;
+  --color:#5b3928;
+  --border-radius:10px;
+
+  font-weight:700;
+  margin:0;
+}
+
+/* =========================================================
+   ANIMACION
+   ========================================================= */
+
+@keyframes dialogIn{
+  from{
+    opacity:0;
+    transform:translateY(8px) scale(.98);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+/* =========================================================
+   TABLET / MOVIL
+   ========================================================= */
+
+@media (max-width:800px){
+
+  .editor-shell{
+    min-height:70vh;
+  }
+
+  .orders-panel{
+    position:absolute;
+
+    right:0;
+    top:0;
+    bottom:0;
+
+    width:min(380px,92vw);
+    max-width:none;
+
+    z-index:30;
+
+    box-shadow:-8px 0 24px rgba(45,30,22,.18);
+  }
+
+  .tool-status{
+    display:none;
+  }
+
+  .editor-toolbar{
+    top:8px;
+    left:8px;
+    right:8px;
+  }
+
+  .dialog-actions{
+    flex-direction:column;
+  }
+
+  .dialog-secondary,
+  .dialog-button{
+    width:100%;
+  }
+
+  .order-dialog{
+    width:calc(100vw - 20px);
+    max-width:none;
+    max-height:calc(100vh - 20px);
+  }
+
+  .current-order{
+    max-height:none;
+  }
+
+  .order-item{
+    align-items:flex-start;
+  }
+
+  .add-product-row{
+    grid-template-columns:minmax(0,1fr) 78px;
+  }
+
+  .add-product-button{
+    grid-column:1 / -1;
+    width:100%;
+  }
+}
+
+/* =========================================================
+   MOVIL PEQUEÑO
+   ========================================================= */
+
+@media (max-width:480px){
+
+  .dialog-backdrop{
+    padding:8px;
+  }
+
+  .order-dialog{
+    width:calc(100vw - 16px);
+    max-height:calc(100vh - 16px);
+
+    border-radius:16px;
+  }
+
+  .order-dialog-header{
+    padding:12px 14px;
+  }
+
+  .order-dialog-header h2{
+    font-size:20px;
+  }
+
+  .current-order{
+    padding:10px 14px;
+  }
+
+  .add-order-dialog{
+    padding:10px 14px;
+  }
+
+  .attention-question{
+    padding:8px 14px 4px;
+    font-size:13px;
+  }
+
+  .attention-actions{
+    padding:4px 14px 10px;
+  }
+
+  .add-product-row{
+    grid-template-columns:minmax(0,1fr) 70px;
+    gap:6px;
+    padding:6px;
+  }
+}
+
 `]
 })
 export class PlanEditorComponent
