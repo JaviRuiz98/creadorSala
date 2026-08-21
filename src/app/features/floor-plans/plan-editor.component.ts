@@ -7,6 +7,7 @@ import {
   OnChanges,
   OnDestroy,
   Output,
+  signal,
   SimpleChanges,
   ViewChild
 } from '@angular/core';
@@ -111,8 +112,7 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
       </div>
 
       <div class="order-list">
-        @for (item of orderItems; track item.id + '-' + item.quantity + '-' + item.status) {
-          <div class="order-list-item">
+@for (item of panelOrderItems(); track item.id + '-' + item.quantity + '-' + item.status) {          <div class="order-list-item">
             <ion-label>
               <strong>{{ item.product.name }}</strong>
               <span> × {{ item.quantity }}</span>
@@ -1455,6 +1455,7 @@ export class PlanEditorComponent
     Array<{ id: string; name: string }> = [];
   orderItems:
     Array<any> = [];
+    panelOrderItems = signal<any[]>([]);
   orderCountMap =
     new Map<string, number>();
   selectedPending =
@@ -1727,10 +1728,20 @@ constructor(
       this.realtimeChannel.unsubscribe();
     }
     this.realtimeChannel =
-      this.orders.subscribe(
-        () =>
-          void this.refreshPendingMap()
-      );
+    this.orders.subscribe(
+      () => {
+        void this.refreshPendingMap();
+
+        const target =
+          this.selectedOrderTarget ??
+          this.selectedTable ??
+          this.selectedReserved;
+
+        if (target) {
+          void this.loadOrdersForTarget(target);
+        }
+      }
+    );
   }
   private initStage() {
     if (this.stage) {
@@ -2622,28 +2633,70 @@ constructor(
 private async loadOrdersForTarget(
   target?: ClubTable
 ) {
+  console.log('📋 [PANEL DERECHO] loadOrdersForTarget INICIO');
+  console.log('📋 Target recibido:', target);
+  console.log('📋 selectedOrderTarget:', this.selectedOrderTarget);
+  console.log('📋 selectedTable:', this.selectedTable);
+  console.log('📋 selectedReserved:', this.selectedReserved);
+
   const orderTarget =
     target ??
     this.selectedOrderTarget ??
     this.selectedTable ??
     this.selectedReserved;
 
+  console.log('📋 [PANEL DERECHO] orderTarget FINAL:', orderTarget);
+
   if (!orderTarget) {
+    console.warn('⚠️ [PANEL DERECHO] No hay target');
+
     this.orderItems = [];
     this.selectedPending = 0;
     this.cdr.detectChanges();
+
+    console.log('📋 [PANEL DERECHO] Lista vaciada porque no hay target');
+
     return;
   }
 
   try {
+    console.log(
+      '📋 [PANEL DERECHO] Consultando pedidos para ID:',
+      orderTarget.id
+    );
+
     const result =
       await this.orders.forTable(
         orderTarget.id
       );
 
+    console.log(
+      '📋 [PANEL DERECHO] Resultado de orders.forTable():',
+      result
+    );
+
+    console.log(
+      '📋 [PANEL DERECHO] Items recibidos:',
+      result.items
+    );
+
     this.orderItems = [
       ...result.items
     ];
+
+    console.log(
+      '📋 [PANEL DERECHO] orderItems actualizado:',
+      this.orderItems
+    );
+
+    this.panelOrderItems.set([
+      ...result.items
+    ]);
+
+    console.log(
+      '📋 [PANEL DERECHO] panelOrderItems actualizado:',
+      this.panelOrderItems()
+    );
 
     this.selectedPending =
       this.orderItems
@@ -2657,16 +2710,24 @@ private async loadOrdersForTarget(
           0
         );
 
+    console.log(
+      '📋 [PANEL DERECHO] selectedPending:',
+      this.selectedPending
+    );
+
     this.pendingChanged.emit(
       this.selectedPending
     );
 
-    // Forzar actualización inmediata del HTML
     this.cdr.detectChanges();
+
+    console.log(
+      '✅ [PANEL DERECHO] detectChanges ejecutado'
+    );
 
   } catch (error) {
     console.error(
-      'Error cargando pedido:',
+      '❌ [PANEL DERECHO] Error cargando pedido:',
       error
     );
 
@@ -2675,6 +2736,8 @@ private async loadOrdersForTarget(
 
     this.cdr.detectChanges();
   }
+
+  console.log('📋 [PANEL DERECHO] loadOrdersForTarget FIN');
 }
   deleteSelected() {
     if (
@@ -3539,100 +3602,124 @@ private async loadOrdersForTarget(
       this.selectedProductId = '';
     }
   }
-  async addAlcoholItem() {
-    const added = await this.addProductToOrder(this.selectedAlcoholProductId, this.alcoholQuantity);
-    if (added) {
-      this.alcoholQuantity = 1;
-      this.selectedAlcoholProductId = '';
-    }
+async addAlcoholItem() {
+
+  console.log('🍺 [DIALOG] Añadiendo alcohol');
+
+  const added = await this.addProductToOrder(
+    this.selectedAlcoholProductId,
+    this.alcoholQuantity
+  );
+
+  console.log(
+    '🍺 [DIALOG] Resultado:',
+    added
+  );
+
+  if (added) {
+    this.alcoholQuantity = 1;
+    this.selectedAlcoholProductId = '';
   }
-  async addSoftDrinkItem() {
-    const added = await this.addProductToOrder(this.selectedSoftDrinkProductId, this.softDrinkQuantity);
-    if (added) {
-      this.softDrinkQuantity = 1;
-      this.selectedSoftDrinkProductId = '';
-    }
+}
+
+async addSoftDrinkItem() {
+
+  console.log('🥤 [DIALOG] Añadiendo refresco');
+
+  const added = await this.addProductToOrder(
+    this.selectedSoftDrinkProductId,
+    this.softDrinkQuantity
+  );
+
+  console.log(
+    '🥤 [DIALOG] Resultado:',
+    added
+  );
+
+  if (added) {
+    this.softDrinkQuantity = 1;
+    this.selectedSoftDrinkProductId = '';
   }
+}
   /*
    * Añade (o incrementa, si ya existe en el pedido) un producto para la
    * mesa/reservado seleccionado. Se usa tanto desde el dropdown de
    * alcoholes como el de refrescos: la lógica de "ya existe -> +cantidad"
    * vive en OrderService.addItem y es idéntica para mesa y reservado.
    */
-  private async addProductToOrder(
-    productId: string,
-    quantity: number
-  ): Promise<boolean> {
-    const target =
-      this.selectedOrderTarget ??
-      this.selectedTable ??
-      this.selectedReserved;
-    if (
-      !target ||
-      !productId ||
-      quantity < 1
-    ) {
-      return false;
-    }
-    const session =
-      this.auth.session();
-    if (!session) {
-      console.error(
-        'No hay una sesión activa.'
-      );
-      return false;
-    }
-    try {
-      await this.orders.addItem(
-        target.id,
-        productId,
-        Math.floor(quantity),
-        session.user.id
-      );
+private async addProductToOrder(
+  productId: string,
+  quantity: number
+): Promise<boolean> {
 
-      await this.refreshCurrentOrder();
-
-      return true;
-    }
-    catch (error) {
-      console.error(
-        'Error añadiendo producto:',
-        error
-      );
-      return false;
-    }
-  }
-  private async refreshCurrentOrder(): Promise<void> {
   const target =
+    this.selectedOrderTarget ??
     this.selectedTable ??
-    this.selectedReserved ??
-    this.selectedOrderTarget;
+    this.selectedReserved;
 
-  if (!target) {
-    this.orderItems = [];
-    this.selectedPending = 0;
-    return;
+  console.log('🟡 [ADD PRODUCT] Target:', target);
+  console.log('🟡 [ADD PRODUCT] Producto:', productId);
+  console.log('🟡 [ADD PRODUCT] Cantidad:', quantity);
+
+  if (!target || !productId || quantity < 1) {
+    console.error('❌ [ADD PRODUCT] Datos inválidos');
+    return false;
   }
 
-  const result = await this.orders.forTable(target.id);
+  const session = this.auth.session();
 
-  this.orderItems = result.items.map(item => ({
-    ...item,
-    product: {
-      ...item.product
-    }
-  }));
+  if (!session) {
+    console.error('❌ [ADD PRODUCT] No hay sesión');
+    return false;
+  }
 
-  this.selectedPending = this.orderItems
-    .filter(item => item.status === 'PENDING')
-    .reduce((total, item) => total + item.quantity, 0);
+  try {
 
-  this.pendingChanged.emit(this.selectedPending);
+    console.log(
+      '🟡 [ADD PRODUCT] Insertando en BBDD...'
+    );
 
-  await this.refreshPendingMap();
+    await this.orders.addItem(
+      target.id,
+      productId,
+      Math.floor(quantity),
+      session.user.id
+    );
 
-  this.render();
+    console.log(
+      '🟢 [ADD PRODUCT] Producto guardado en BBDD'
+    );
+
+    console.log(
+      '🔵 [ADD PRODUCT] Recargando pedido...'
+    );
+
+    await this.loadOrdersForTarget(target);
+
+    console.log(
+      '🟢 [ADD PRODUCT] Pedido recargado:',
+      this.orderItems
+    );
+
+    await this.refreshPendingMap();
+
+    console.log(
+      '🟢 [ADD PRODUCT] Panel actualizado'
+    );
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      '❌ [ADD PRODUCT] Error:',
+      error
+    );
+
+    return false;
+  }
 }
+
   async changeItemQuantity(item: any, delta: number) {
     const nextQuantity = Number(item.quantity) + delta;
     if (nextQuantity <= 0) {
