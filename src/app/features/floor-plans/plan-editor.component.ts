@@ -103,7 +103,7 @@ type EditorTool = 'select' | 'draw' | 'pan' | 'text';
       </div>
 
       <div class="order-list">
-        @for (item of orderItems; track item.id) {
+        @for (item of orderItems; track item.id + '-' + item.quantity + '-' + item.status) {
           <div class="order-list-item">
             <ion-label>
               <strong>{{ item.product.name }}</strong>
@@ -3569,10 +3569,12 @@ export class PlanEditorComponent
     }
     try {
       await this.orders.addItem(target.id, productId, Math.floor(quantity), session.user.id);
-      await this.loadOrdersForTarget(
-        target
-      );
+      await this.loadOrdersForTarget(target);
       await this.refreshPendingMap();
+
+      // Forzar nueva referencia para que Angular actualice inmediatamente
+      this.orderItems = [...this.orderItems];
+
       this.render();
       return true;
     }
@@ -3609,6 +3611,10 @@ export class PlanEditorComponent
       if (error) throw error;
       await this.loadOrdersForTarget();
       await this.refreshPendingMap();
+
+      this.orderItems = [...this.orderItems];
+
+      this.render();
     } catch (error) {
       console.error('Error modificando producto:', error);
     }
@@ -3628,6 +3634,8 @@ export class PlanEditorComponent
       if (error) throw error;
       await this.loadOrdersForTarget();
       await this.refreshPendingMap();
+      this.orderItems = [...this.orderItems];
+      this.render();
     } catch (error) {
       console.error('Error eliminando producto:', error);
     }
