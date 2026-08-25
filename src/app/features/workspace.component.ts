@@ -84,7 +84,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   configured = true;
   newCategory = '';
   newProductName: Record<string, string> = {};
-  newProductPrice: Record<string, number> = {};
   createPlanDialog = signal(false);
   newPlanName = '';
 
@@ -197,8 +196,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   private async refreshOperationalData(): Promise<void> {
-    if (this.activeTab() !== 'operativo') return;
-    this.toast.set('Datos actualizados');
+    // Los cambios se sincronizan por Supabase Realtime.
+    // El aviso visual de nuevos pedidos se gestiona exclusivamente
+    // mediante OrderNotificationService cuando se inserta un order_item.
+    return;
   }
 
   toggleEditorMode(): void {
@@ -440,13 +441,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   async createProduct(categoryId: string): Promise<void> {
     if (!this.isAdmin) return;
     const name = this.newProductName[categoryId]?.trim();
-    const price = Number(this.newProductPrice[categoryId]);
-    if (!name || !Number.isFinite(price) || price < 0) return;
+    if (!name) return;
     try {
-      const product = await this.product.createProduct(categoryId, name, price);
+      const product = await this.product.createProduct(categoryId, name);
       this.products.update((current) => [...current, product]);
       this.newProductName[categoryId] = '';
-      this.newProductPrice[categoryId] = 0;
       this.toast.set('Producto añadido');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'No se pudo crear el producto');

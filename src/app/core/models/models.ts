@@ -67,7 +67,7 @@ export interface Product {
   id: string;
   category_id: string;
   name: string;
-  price: number;
+  price: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;

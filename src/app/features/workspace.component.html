@@ -149,19 +149,11 @@
           <h2>{{ category.name }}</h2>
           @for (product of productsFor(category.id); track product.id) {
             <div class="product-row">
-              <span>{{ product.name }}</span
-              ><strong>{{ product.price | number: '1.2-2' }} €</strong>
+              <span>{{ product.name }}</span>
             </div>
           }
           <div class="category-add">
             <ion-input label="Producto" labelPlacement="stacked" fill="outline" [(ngModel)]="newProductName[category.id]"></ion-input>
-            <ion-input
-              label="Precio"
-              type="number"
-              labelPlacement="stacked"
-              fill="outline"
-              [(ngModel)]="newProductPrice[category.id]"
-            ></ion-input>
             <ion-button class="primary-button" (click)="createProduct(category.id)">Añadir</ion-button>
           </div>
         </section>
@@ -345,12 +337,12 @@
       <div class="dialog-header alert-header">
         <div>
           <span class="dialog-eyebrow">NUEVO PEDIDO</span>
-          <h2>SE HA HECHO UN PEDIDO</h2>
-          <p>Hay un nuevo pedido pendiente en la sala.</p>
+          <h2>HAY NUEVOS PEDIDOS</h2>
+          <p>Se han recibido nuevos pedidos. Pulsa Continuar para cerrar este aviso.</p>
         </div>
       </div>
       <div class="dialog-actions">
-        <ion-button class="primary-button" expand="block" (click)="acknowledgeNewOrder()">Aceptar</ion-button>
+        <ion-button class="primary-button" expand="block" (click)="acknowledgeNewOrder()">Continuar</ion-button>
       </div>
     </div>
   </ng-template>

@@ -19,8 +19,8 @@ export class ProductService {
     if (error) throw error;
     return data as ProductCategory;
   }
-  async createProduct(categoryId: string, name: string, price: number): Promise<Product> {
-    const { data, error } = await this.db.client.from('products').insert({ category_id: categoryId, name, price }).select().single();
+  async createProduct(categoryId: string, name: string): Promise<Product> {
+    const { data, error } = await this.db.client.from('products').insert({ category_id: categoryId, name, price: null }).select().single();
     if (error) throw error;
     return data as Product;
   }

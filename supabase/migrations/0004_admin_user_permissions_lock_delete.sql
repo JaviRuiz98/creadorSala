@@ -165,7 +165,24 @@ begin
   if auth.uid() is null or public.current_role() not in ('ADMIN','USER') then
     raise exception 'No autorizado';
   end if;
-  update public.tables set attended=p_attended,updated_at=now() where id=p_table_id;
+
+  update public.tables
+  set attended=p_attended,updated_at=now()
+  where id=p_table_id;
+
+  -- Al marcar una mesa/reservado como atendido, todos sus productos
+  -- pendientes pasan a PLACED. Los cancelados no se modifican.
+  if p_attended then
+    update public.order_items oi
+    set status='PLACED',
+        placed_by=auth.uid(),
+        placed_at=now(),
+        updated_at=now()
+    from public.orders o
+    where oi.order_id=o.id
+      and o.table_id=p_table_id
+      and oi.status='PENDING';
+  end if;
 end
 $$;
 revoke all on function public.set_table_attended(uuid,boolean) from public;
