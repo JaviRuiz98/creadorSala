@@ -2,33 +2,16 @@ import { Injectable } from '@angular/core';
 
 import { SupabaseService } from './supabase.service';
 
-import type {
-  ClubTable,
-  FloorPlan,
-  FloorPlanElement,
-  FloorSnapshot
-} from '../models/models';
-
+import type { ClubTable, FloorPlan, FloorPlanElement, FloorSnapshot } from '../models/models';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class FloorPlanService {
-
-  constructor(
-    private readonly db: SupabaseService
-  ) {}
-
+  constructor(public readonly db: SupabaseService) {}
 
   async list(): Promise<FloorPlan[]> {
-
-    const {
-      data,
-      error
-    } = await this.db.client
-      .from('floor_plans')
-      .select('*')
-      .order('name');
+    const { data, error } = await this.db.client.from('floor_plans').select('*').order('name');
 
     if (error) {
       throw error;
@@ -37,24 +20,14 @@ export class FloorPlanService {
     return data as FloorPlan[];
   }
 
-
-  async create(
-    name: string,
-    width = 2000,
-    height = 1200,
-    userId: string
-  ): Promise<FloorPlan> {
-
-    const {
-      data,
-      error
-    } = await this.db.client
+  async create(name: string, width = 2000, height = 1200, userId: string): Promise<FloorPlan> {
+    const { data, error } = await this.db.client
       .from('floor_plans')
       .insert({
         name,
         width,
         height,
-        created_by: userId
+        created_by: userId,
       })
       .select()
       .single();
@@ -66,96 +39,41 @@ export class FloorPlanService {
     return data as FloorPlan;
   }
 
-
-  async update(
-    planId: string,
-    patch: Partial<FloorPlan>
-  ): Promise<void> {
-
-    const {
-      error
-    } = await this.db.client
-      .from('floor_plans')
-      .update(patch)
-      .eq(
-        'id',
-        planId
-      );
+  async update(planId: string, patch: Partial<FloorPlan>): Promise<void> {
+    const { error } = await this.db.client.from('floor_plans').update(patch).eq('id', planId);
 
     if (error) {
       throw error;
     }
   }
 
-
-  async remove(
-    planId: string
-  ): Promise<void> {
-
-    const {
-      error
-    } = await this.db.client
-      .from('floor_plans')
-      .delete()
-      .eq(
-        'id',
-        planId
-      );
+  async remove(planId: string): Promise<void> {
+    const { error } = await this.db.client.from('floor_plans').delete().eq('id', planId);
 
     if (error) {
       throw error;
     }
   }
 
+  async load(planId: string): Promise<FloorSnapshot> {
+    const [elementsResult, tablesResult] = await Promise.all([
+      this.db.client.from('floor_plan_elements').select('*').eq('floor_plan_id', planId).order('z_index'),
 
-  async load(
-    planId: string
-  ): Promise<FloorSnapshot> {
-
-    const [
-      elementsResult,
-      tablesResult
-    ] = await Promise.all([
-
-      this.db.client
-        .from('floor_plan_elements')
-        .select('*')
-        .eq(
-          'floor_plan_id',
-          planId
-        )
-        .order('z_index'),
-
-      this.db.client
-        .from('tables')
-        .select('*')
-        .eq(
-          'floor_plan_id',
-          planId
-        )
-        .order('number')
-
+      this.db.client.from('tables').select('*').eq('floor_plan_id', planId).order('number'),
     ]);
-
 
     if (elementsResult.error) {
       throw elementsResult.error;
     }
 
-
     if (tablesResult.error) {
       throw tablesResult.error;
     }
 
-
-    const allTables =
-      (tablesResult.data ?? []) as ClubTable[];
-
+    const allTables = (tablesResult.data ?? []) as ClubTable[];
 
     return {
-
-      elements:
-        elementsResult.data as FloorPlanElement[],
+      elements: elementsResult.data as FloorPlanElement[],
 
       /*
        * La tabla de Supabase contiene tanto
@@ -165,27 +83,13 @@ export class FloorPlanService {
        * componente pueda trabajar con ellos
        * independientemente.
        */
-      tables:
-        allTables.filter(
-          table =>
-            table.type !== 'RESERVED'
-        ),
+      tables: allTables.filter((table) => table.type !== 'RESERVED'),
 
-      reserved:
-        allTables.filter(
-          table =>
-            table.type === 'RESERVED'
-        )
-
+      reserved: allTables.filter((table) => table.type === 'RESERVED'),
     } as FloorSnapshot;
   }
 
-
-  async saveSnapshot(
-    planId: string,
-    snapshot: FloorSnapshot
-  ): Promise<void> {
-
+  async saveSnapshot(planId: string, snapshot: FloorSnapshot): Promise<void> {
     /*
      * IMPORTANTE:
      *
@@ -198,74 +102,49 @@ export class FloorPlanService {
      * Por eso aquí los combinamos antes de
      * enviarlos al RPC.
      */
-    const allTables: ClubTable[] = [
+    const allTables: ClubTable[] = [...(snapshot.tables ?? []), ...(snapshot.reserved ?? [])];
 
-      ...(snapshot.tables ?? []),
+    const { error: rpcError } = await this.db.client.rpc('replace_floor_plan_snapshot', {
+      p_floor_plan_id: planId,
 
-      ...(
-        (snapshot as any).reserved ?? []
-      )
+      p_elements: snapshot.elements.map((element) => ({
+        kind: element.kind,
+        x: element.x,
+        y: element.y,
+        width: element.width,
+        height: element.height,
+        rotation: element.rotation,
+        points: element.points,
+        label: element.label,
+        z_index: element.z_index,
+      })),
 
-    ];
-
-
-    const {
-      error: rpcError
-    } = await this.db.client.rpc(
-      'replace_floor_plan_snapshot',
-      {
-
-        p_floor_plan_id:
-          planId,
-
-        p_elements:
-          snapshot.elements.map(
-            (element) => ({
-              kind: element.kind,
-              x: element.x,
-              y: element.y,
-              width: element.width,
-              height: element.height,
-              rotation: element.rotation,
-              points: element.points,
-              label: element.label,
-              z_index: element.z_index
-            })
-          ),
-
-        /*
-         * IMPORTANTE: aquí SÍ se envía el id de cada mesa/reservado
-         * (junto con type y attended). El RPC hace un upsert por id:
-         * así las mesas que se mantienen conservan su fila real en
-         * BBDD (y sus pedidos), las que ya no están en el array se
-         * borran de verdad, y las nuevas se crean con el id que ya
-         * generó el cliente. Se envían tanto TABLE como RESERVED.
-         */
-        p_tables:
-          allTables.map(
-            (table) => ({
-              id: table.id,
-              type: table.type,
-              number: table.number,
-              x: table.x,
-              y: table.y,
-              width: table.width,
-              height: table.height,
-              rotation: table.rotation,
-              shape: table.shape,
-              attended: table.attended ?? false
-            })
-          )
-
-      }
-    );
-
+      /*
+       * IMPORTANTE: aquí SÍ se envía el id de cada mesa/reservado
+       * (junto con type y attended). El RPC hace un upsert por id:
+       * así las mesas que se mantienen conservan su fila real en
+       * BBDD (y sus pedidos), las que ya no están en el array se
+       * borran de verdad, y las nuevas se crean con el id que ya
+       * generó el cliente. Se envían tanto TABLE como RESERVED.
+       */
+      p_tables: allTables.map((table) => ({
+        id: table.id,
+        type: table.type,
+        number: table.number,
+        x: table.x,
+        y: table.y,
+        width: table.width,
+        height: table.height,
+        rotation: table.rotation,
+        shape: table.shape,
+        attended: table.attended ?? false,
+      })),
+    });
 
     if (rpcError) {
       throw rpcError;
     }
   }
-
 
   /*
    * Actualiza el estado de "atendida" directamente en BBDD, sin tener
@@ -273,25 +152,16 @@ export class FloorPlanService {
    * que un guardado a medias del plano se lleve por delante el estado
    * de atención de la mesa).
    */
-  async setTableAttended(
-    tableId: string,
-    attended: boolean
-  ): Promise<void> {
-
-    const {
-      error
-    } = await this.db.client
-      .from('tables')
-      .update({
-        attended,
-        updated_at: new Date().toISOString()
-      } as never)
-      .eq('id', tableId);
-
-    if (error) {
-      throw error;
-    }
+  async setTableAttended(tableId: string, attended: boolean): Promise<void> {
+    const { error } = await this.db.client.rpc('set_table_attended', {
+      p_table_id: tableId,
+      p_attended: attended,
+    });
+    if (error) throw error;
   }
 
+  async setLocked(planId: string, locked: boolean): Promise<void> {
+    const { error } = await this.db.client.from('floor_plans').update({ is_locked: locked }).eq('id', planId);
+    if (error) throw error;
+  }
 }
-

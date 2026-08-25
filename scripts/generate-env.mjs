@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 function readDotEnv() {
   if (!existsSync('.env')) return {};
@@ -26,6 +26,7 @@ const makeEnvironment = production => `export const environment = {
 `;
 
 if (url && key) {
+  mkdirSync('src/environments', { recursive: true });
   writeFileSync('src/environments/environment.ts', makeEnvironment(false));
   writeFileSync('src/environments/environment.prod.ts', makeEnvironment(true));
   console.log('Supabase environment generated.');

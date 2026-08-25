@@ -1,0 +1,116 @@
+<aside class="product-panel">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">OPERATIVA</span>
+          <h2>Mesas y reservados</h2>
+          <p>{{ listedTargets.length }} elementos en el plano</p>
+        </div>
+        @if (isAdmin) {
+          <ion-button class="add-button" (click)="openDialog()" [disabled]="loading || availableTargets.length === 0">
+            + Agregar producto
+          </ion-button>
+        }
+      </div>
+
+      @if (loading) {
+        <div class="panel-loading"><ion-spinner></ion-spinner><span>Cargando estado...</span></div>
+      } @else {
+        <div class="target-list">
+          @for (target of listedTargets; track target.id) {
+            <article class="target-card" [class.attended]="target.attended" [class.pending]="!target.attended">
+              <div class="target-title-row">
+                <div>
+                  <span class="kind">{{ target.kindLabel }}</span>
+                  <strong>{{ target.displayName }}</strong>
+                </div>
+                <span class="status-dot" [class.green]="target.attended" [class.red]="!target.attended"></span>
+              </div>
+
+              @if (target.items.length > 0) {
+                <div class="item-list">
+                  @for (item of target.items; track item.id) {
+                    <div class="assigned-item">
+                      <span>{{ item.product.name }}</span>
+                      <strong>x{{ item.quantity }}</strong>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="no-items">Sin productos asignados</div>
+              }
+            </article>
+          } @empty {
+            <div class="empty-panel">
+              <strong>No hay mesas ni reservados</strong>
+              <span>Guarda primero el esquema del plano.</span>
+            </div>
+          }
+        </div>
+      }
+    </aside>
+
+    @if (dialogOpen && isAdmin) {
+      <div class="dialog-backdrop" (click)="closeDialog()">
+        <section class="assignment-dialog" (click)="$event.stopPropagation()">
+          <header class="dialog-header">
+            <div>
+              <span class="eyebrow">ASIGNAR PRODUCTOS</span>
+              <h2>Alcohol y refrescos</h2>
+              <p>Selecciona una mesa o reservado y prepara su pedido.</p>
+            </div>
+            <button type="button" class="close-button" (click)="closeDialog()">×</button>
+          </header>
+
+          <div class="dialog-body">
+            <ion-select label="Mesa / reservado" labelPlacement="stacked" fill="outline" [(ngModel)]="selectedTargetId" (ionChange)="onTargetChange()">
+              <ion-select-option [value]="''">Seleccionar...</ion-select-option>
+              @for (target of availableTargets; track target.id) {
+                <ion-select-option [value]="target.id">{{ target.displayName }}</ion-select-option>
+              }
+            </ion-select>
+
+            @if (selectedTargetId) {
+              <section class="product-section">
+                <h3>Alcohol</h3>
+                @for (product of alcoholProducts; track product.id) {
+                  <div class="product-line">
+                    <span>{{ product.name }}</span>
+                    <div class="quantity-control">
+                      <button type="button" (click)="changeQuantity(alcoholQuantities, product.id, -1)">−</button>
+                      <strong>{{ alcoholQuantities[product.id] || 0 }}</strong>
+                      <button type="button" (click)="changeQuantity(alcoholQuantities, product.id, 1)">+</button>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="empty-products">No hay productos de alcohol en el inventario.</p>
+                }
+              </section>
+
+              <section class="product-section">
+                <h3>Refrescos</h3>
+                @for (product of softDrinkProducts; track product.id) {
+                  <div class="product-line">
+                    <span>{{ product.name }}</span>
+                    <div class="quantity-control">
+                      <button type="button" (click)="changeQuantity(softDrinkQuantities, product.id, -1)">−</button>
+                      <strong>{{ softDrinkQuantities[product.id] || 0 }}</strong>
+                      <button type="button" (click)="changeQuantity(softDrinkQuantities, product.id, 1)">+</button>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="empty-products">No hay refrescos en el inventario.</p>
+                }
+              </section>
+            }
+          </div>
+
+          <footer class="dialog-actions">
+            <span class="dialog-error">{{ errorMessage }}</span>
+            <ion-button fill="outline" (click)="closeDialog()">Cancelar</ion-button>
+            <ion-button class="save-button" [disabled]="saving || !selectedTargetId || selectedItemCount === 0" (click)="saveAssignment()">
+              @if (saving) { <ion-spinner name="crescent"></ion-spinner> } @else { Guardar asignación }
+            </ion-button>
+          </footer>
+        </section>
+      </div>
+    }

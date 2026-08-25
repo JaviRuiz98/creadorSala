@@ -11,9 +11,7 @@ export interface ProductAssignmentItem {
 export class OrderService {
   constructor(public db: SupabaseService) {}
 
-  async forTable(
-    tableId: string
-  ): Promise<{
+  async forTable(tableId: string): Promise<{
     order: Order | null;
     items: Array<OrderItem & { product: Product }>;
   }> {
@@ -32,7 +30,7 @@ export class OrderService {
     if (!order) {
       return {
         order: null,
-        items: []
+        items: [],
       };
     }
 
@@ -47,16 +45,11 @@ export class OrderService {
 
     return {
       order,
-      items: (data as Array<OrderItem & { product: Product }>) ?? []
+      items: (data as Array<OrderItem & { product: Product }>) ?? [],
     };
   }
 
-  async addItem(
-    tableId: string,
-    productId: string,
-    quantity: number,
-    userId: string
-  ): Promise<void> {
+  async addItem(tableId: string, productId: string, quantity: number, userId: string): Promise<void> {
     const { data: order, error } = await this.db.client
       .from('orders')
       .select('id')
@@ -73,7 +66,7 @@ export class OrderService {
         .from('orders')
         .insert({
           table_id: tableId,
-          created_by: userId
+          created_by: userId,
         })
         .select('id')
         .single();
@@ -99,7 +92,7 @@ export class OrderService {
         .from('order_items')
         .update({
           quantity: current.quantity + quantity,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', current.id);
 
@@ -107,31 +100,24 @@ export class OrderService {
       return;
     }
 
-    const { error: itemError } = await this.db.client
-      .from('order_items')
-      .insert({
-        order_id: orderId,
-        product_id: productId,
-        quantity,
-        created_by: userId
-      });
+    const { error: itemError } = await this.db.client.from('order_items').insert({
+      order_id: orderId,
+      product_id: productId,
+      quantity,
+      created_by: userId,
+    });
 
     if (itemError) throw itemError;
   }
 
-  async assignProducts(
-    tableId: string,
-    items: ProductAssignmentItem[]
-  ): Promise<string> {
+  async assignProducts(tableId: string, items: ProductAssignmentItem[]): Promise<string> {
     if (!items.length) {
       throw new Error('Selecciona al menos un producto');
     }
 
-    const { data, error } = await (
-      this.db.client as any
-    ).rpc('assign_products_to_table', {
+    const { data, error } = await (this.db.client as any).rpc('assign_products_to_table', {
       p_table_id: tableId,
-      p_items: items
+      p_items: items,
     });
 
     if (error) {
@@ -145,16 +131,13 @@ export class OrderService {
     return data as string;
   }
 
-  async markPlaced(
-    itemId: string,
-    userId: string
-  ): Promise<void> {
+  async markPlaced(itemId: string, userId: string): Promise<void> {
     const { error } = await this.db.client
       .from('order_items')
       .update({
         status: 'PLACED',
         placed_by: userId,
-        placed_at: new Date().toISOString()
+        placed_at: new Date().toISOString(),
       })
       .eq('id', itemId)
       .eq('status', 'PENDING');
@@ -170,27 +153,27 @@ export class OrderService {
         {
           event: '*',
           schema: 'public',
-          table: 'orders'
+          table: 'orders',
         },
-        onChange
+        onChange,
       )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'order_items'
+          table: 'order_items',
         },
-        onChange
+        onChange,
       )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'tables'
+          table: 'tables',
         },
-        onChange
+        onChange,
       )
       .subscribe();
   }

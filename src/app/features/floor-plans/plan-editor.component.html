@@ -1,0 +1,530 @@
+<div class="editor-shell">
+  <div class="editor-toolbar">
+    @if (mode === 'editor') {
+      <div class="tool-group">
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'select'" (click)="setTool('select')">↖ Seleccionar</ion-button>
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'draw'" [disabled]="!canEditGeometry" (click)="setTool('draw')">✏️ Dibujar</ion-button>
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'text'" [disabled]="!canEditGeometry" (click)="setTool('text')">T Texto</ion-button>
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ Pan</ion-button>
+      </div>
+
+      <div class="tool-group">
+        <ion-button class="editor-button primary" size="small" (click)="saveDesign()" [disabled]="!isAdmin">💾 Guardar diseño</ion-button>
+        <ion-button class="editor-button lock-button" size="small" [class.locked]="plan.is_locked" (click)="togglePlanLock()">{{ plan.is_locked ? '🔒 Fijado' : '🔓 Fijar' }}</ion-button>
+        <ion-button class="editor-button danger" size="small" (click)="deleteSelected()" [disabled]="!canEditGeometry || (!selectedElementId && !selectedTable && !selectedReserved)">🧹 Borrar</ion-button>
+        <ion-button class="editor-button" size="small" (click)="clearDrawing()" [disabled]="!canEditGeometry || drawing.length === 0">Borrar dibujo</ion-button>
+        <ion-button class="editor-button" size="small" (click)="addTable()" [disabled]="!canEditGeometry">+ Mesa</ion-button>
+        <ion-button class="editor-button reserved-button" size="small" (click)="addReserved()" [disabled]="!canEditGeometry">+ Reservado</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="undo()" [disabled]="historyIndex < 1">↶</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="redo()" [disabled]="historyIndex >= history.length - 1">↷</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)">−</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)">+</ion-button>
+      </div>
+
+      <span class="tool-status">
+        Herramienta: <strong>{{ toolLabel }}</strong>
+        @if (selectedElementId) {
+          <span class="selected-status">· Elemento seleccionado</span>
+        }
+        @if (selectedTable) {
+          <span class="selected-status">· Mesa {{ selectedTable.number }}</span>
+        }
+        @if (selectedReserved) {
+          <span class="selected-status">· Reservado {{ selectedReserved.number }}</span>
+        }
+      </span>
+    } @else {
+      <div class="tool-group">
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'select'" (click)="setTool('select')">↖ Seleccionar</ion-button>
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ Pan</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)">−</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)">+</ion-button>
+      </div>
+    }
+  </div>
+
+  <div
+    class="canvas-area"
+    #container
+    [class.draw-mode]="tool === 'draw'"
+    [class.text-mode]="tool === 'text'"
+    (pointerdown)="pointerDown($event)"
+    (pointermove)="pointerMove($event)"
+    (pointerup)="pointerUp($event)"
+    (pointercancel)="pointerUp($event)">
+  </div>
+
+@if (mode === 'operativo' && (selectedTable || selectedReserved)) {
+    <aside class="orders-panel">
+      <div class="orders-head">
+        <strong>
+          {{ selectedTable ? 'Mesa' : 'Reservado' }}
+          {{ (selectedTable || selectedReserved)?.number }}
+        </strong>
+        <span>{{ selectedPending }} pendientes</span>
+      </div>
+
+      <div class="order-list">
+        @for (item of orderItems(); track item.id) {
+          <div class="order-list-item">
+            <ion-label>
+              <strong>{{ item.product.name }}</strong>
+              <span> × {{ item.quantity }}</span>
+              <small>
+                {{ item.status === 'PENDING' ? '🔴 Pendiente' : '🟢 Puesto' }}
+              </small>
+            </ion-label>
+
+            @if (item.status === 'PENDING' && canManageOrders) {
+              <ion-button class="small-action" size="small" (click)="markPlaced(item.id)">Puesta</ion-button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (canManageOrders) { <div class="add-order">
+        <ion-select
+          label="Producto"
+          labelPlacement="stacked"
+          [(ngModel)]="selectedProductId">
+
+          @for (p of products; track p.id) {
+            <ion-select-option [value]="p.id">
+              {{ p.name }}
+            </ion-select-option>
+          }
+        </ion-select>
+
+        <ion-input
+          label="Cantidad"
+          type="number"
+          min="1"
+          step="1"
+          labelPlacement="stacked"
+          [(ngModel)]="quantity">
+        </ion-input>
+
+        <ion-button
+          class="editor-button primary full"
+          expand="block"
+          [disabled]="!selectedProductId || quantity < 1"
+          (click)="addOrderItem()">
+          Añadir
+        </ion-button>
+      </div> }
+    </aside>
+  }
+
+  <ion-modal
+    [isOpen]="showOrderDialog"
+    [backdropDismiss]="true"
+    class="order-modal"
+    (didDismiss)="closeOrderDialog()">
+    <ng-template>
+      <div class="order-dialog attention-dialog">
+
+        <div class="order-dialog-header">
+          <div>
+            <span class="dialog-eyebrow">
+              {{ selectedOrderTarget?.type === 'RESERVED' ? 'RESERVADO' : 'MESA' }}
+            </span>
+
+            <h2>{{ selectedOrderTarget?.number }}</h2>
+          </div>
+
+          <ion-button
+            class="close-button"
+            fill="clear"
+            (click)="closeOrderDialog()">
+            ✕
+          </ion-button>
+        </div>
+
+        <div class="current-order">
+          <div class="section-title">Pedido actual</div>
+
+          @if (orderItems().length === 0) {
+            <div class="empty-order">
+              <span>🛒</span>
+              <p>No hay productos en el pedido.</p>
+            </div>
+          } @else {
+
+            @if (alcoholItems.length) {
+              <div class="product-section alcohol-section">
+
+                <div class="product-section-title">
+                  🍺 Alcoholes
+                </div>
+
+                @for (item of alcoholItems; track item.id) {
+                  <div class="order-item">
+
+                    <div class="order-item-info">
+                      <strong>{{ item.product.name }}</strong>
+                      <span>
+                        {{ item.status === 'PENDING' ? '🔴' : '🟢' }}
+                      </span>
+                    </div>
+
+                    @if (canManageOrders) { <div class="quantity-editor">
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, -1)">
+                        −
+                      </ion-button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, 1)">
+                        +
+                      </ion-button>
+
+                      <ion-button
+                        size="small"
+                        class="remove-item"
+                        (click)="removeOrderItem(item)">
+                        ✕
+                      </ion-button>
+                    </div> }
+
+                  </div>
+                }
+              </div>
+            }
+
+            @if (softDrinkItems.length) {
+              <div class="product-section soft-section">
+
+                <div class="product-section-title">
+                  🥤 Refrescos
+                </div>
+
+                @for (item of softDrinkItems; track item.id) {
+                  <div class="order-item">
+
+                    <div class="order-item-info">
+                      <strong>{{ item.product.name }}</strong>
+                      <span>
+                        {{ item.status === 'PENDING' ? '🔴' : '🟢' }}
+                      </span>
+                    </div>
+
+                    @if (canManageOrders) { <div class="quantity-editor">
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, -1)">
+                        −
+                      </ion-button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, 1)">
+                        +
+                      </ion-button>
+
+                      <ion-button
+                        size="small"
+                        class="remove-item"
+                        (click)="removeOrderItem(item)">
+                        ✕
+                      </ion-button>
+                    </div> }
+
+                  </div>
+                }
+              </div>
+            }
+
+            @if (otherOrderItems.length) {
+              <div class="product-section">
+
+                <div class="product-section-title">
+                  📦 Otros
+                </div>
+
+                @for (item of otherOrderItems; track item.id) {
+                  <div class="order-item">
+
+                    <div class="order-item-info">
+                      <strong>{{ item.product.name }}</strong>
+                      <span>
+                        {{ item.status === 'PENDING' ? '🔴' : '🟢' }}
+                      </span>
+                    </div>
+
+                    @if (canManageOrders) { <div class="quantity-editor">
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, -1)">
+                        −
+                      </ion-button>
+
+                      <span>{{ item.quantity }}</span>
+
+                      <ion-button
+                        size="small"
+                        class="qty-button"
+                        (click)="changeItemQuantity(item, 1)">
+                        +
+                      </ion-button>
+
+                      <ion-button
+                        size="small"
+                        class="remove-item"
+                        (click)="removeOrderItem(item)">
+                        ✕
+                      </ion-button>
+                    </div> }
+
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        @if (canManageOrders) { <div class="add-order-dialog">
+
+          <div class="section-title">
+            Añadir producto
+          </div>
+
+          <div class="add-product-row alcohol-row">
+
+            <ion-select
+              label="🍺 Alcoholes"
+              labelPlacement="stacked"
+              interface="popover"
+              [(ngModel)]="selectedAlcoholProductId">
+
+              <ion-select-option value="">
+                Selecciona un alcohol
+              </ion-select-option>
+
+              @for (p of alcoholProducts; track p.id) {
+                <ion-select-option [value]="p.id">
+                  {{ p.name }}
+                </ion-select-option>
+              }
+            </ion-select>
+
+            <ion-input
+              label="Cantidad"
+              type="number"
+              min="1"
+              step="1"
+              labelPlacement="stacked"
+              [(ngModel)]="alcoholQuantity">
+            </ion-input>
+
+            <ion-button
+              class="editor-button primary add-product-button"
+              expand="block"
+              [disabled]="!selectedAlcoholProductId || alcoholQuantity < 1"
+              (click)="addAlcoholItem()">
+              + Añadir alcohol
+            </ion-button>
+
+          </div>
+
+          <div class="add-product-row soft-row">
+
+            <ion-select
+              label="🥤 Refrescos"
+              labelPlacement="stacked"
+              interface="popover"
+              [(ngModel)]="selectedSoftDrinkProductId">
+
+              <ion-select-option value="">
+                Selecciona un refresco
+              </ion-select-option>
+
+              @for (p of softDrinkProducts; track p.id) {
+                <ion-select-option [value]="p.id">
+                  {{ p.name }}
+                </ion-select-option>
+              }
+            </ion-select>
+
+            <ion-input
+              label="Cantidad"
+              type="number"
+              min="1"
+              step="1"
+              labelPlacement="stacked"
+              [(ngModel)]="softDrinkQuantity">
+            </ion-input>
+
+            <ion-button
+              class="editor-button primary add-product-button"
+              expand="block"
+              [disabled]="!selectedSoftDrinkProductId || softDrinkQuantity < 1"
+              (click)="addSoftDrinkItem()">
+              + Añadir refresco
+            </ion-button>
+
+          </div>
+        </div> }
+
+        <div class="attention-question">
+          ¿Ha sido atendida esta
+          {{ selectedOrderTarget?.type === 'RESERVED' ? 'reservado' : 'mesa' }}?
+        </div>
+
+        <div class="dialog-actions attention-actions">
+          <ion-button
+            class="dialog-secondary"
+            (click)="markAttended(false)">
+            No ha sido atendida
+          </ion-button>
+
+          <ion-button
+            class="dialog-button"
+            [disabled]="orderItems().length === 0"
+            (click)="markAttended(true)">
+            Sí, atendida
+          </ion-button>
+        </div>
+
+      </div>
+    </ng-template>
+  </ion-modal>
+
+  @if (showUnlockDialog) {
+    <div class="dialog-backdrop" (click)="closeUnlockDialog()">
+      <div class="text-dialog" (click)="$event.stopPropagation()">
+        <div class="dialog-icon">🔒</div>
+        <div class="dialog-content"><span class="dialog-eyebrow">PLANO FIJADO</span><h2>¿Desactivar el bloqueo?</h2><p>Las líneas, mesas y reservados volverán a poder moverse y eliminarse.</p>
+          <div class="dialog-actions"><ion-button class="dialog-secondary" (click)="closeUnlockDialog()">No</ion-button><ion-button class="dialog-button" (click)="confirmUnlock()">Sí, desbloquear</ion-button></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDeletePasswordDialog) {
+    <div class="dialog-backdrop" (click)="closeDeletePasswordDialog()">
+      <div class="text-dialog" (click)="$event.stopPropagation()">
+        <div class="dialog-icon">🔐</div>
+        <div class="dialog-content"><span class="dialog-eyebrow">BORRADO PROTEGIDO</span><h2>Contraseña necesaria</h2><p>Introduce la contraseña autorizada para eliminar esta {{ pendingDeleteTarget?.type === 'RESERVED' ? 'reservado' : 'mesa' }}.</p>
+          <ion-input class="text-input" type="password" label="Contraseña de borrado" labelPlacement="stacked" [(ngModel)]="deletePassword" (keydown.enter)="confirmProtectedDelete()"><ion-input-password-toggle slot="end"></ion-input-password-toggle></ion-input>
+          @if (deleteError) { <p class="delete-error">{{ deleteError }}</p> }
+          <div class="dialog-actions"><ion-button class="dialog-secondary" (click)="closeDeletePasswordDialog()">Cancelar</ion-button><ion-button class="dialog-button" [disabled]="!deletePassword" (click)="confirmProtectedDelete()">Continuar</ion-button></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showServedDeleteWarning) {
+    <div class="dialog-backdrop alarm-backdrop" (click)="cancelServedDelete()">
+      <div class="text-dialog alarm-dialog" (click)="$event.stopPropagation()">
+        <div class="alarm-icon">!</div>
+        <div class="dialog-content"><span class="dialog-eyebrow alarm-eyebrow">ATENCIÓN</span><h2>ESTA MESA TIENE PRODUCTOS SERVIDOS</h2><p>Si continúas se eliminarán la mesa/reservado y todos sus pedidos de la base de datos. Esta operación no se puede deshacer.</p>
+          <div class="dialog-actions"><ion-button class="dialog-secondary" (click)="cancelServedDelete()">No</ion-button><ion-button color="danger" class="danger-confirm" (click)="confirmServedDelete()">Sí, eliminar todo</ion-button></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showTextDialog) {
+    <div
+      class="dialog-backdrop"
+      (click)="closeTextDialog()">
+
+      <div
+        class="text-dialog"
+        (click)="$event.stopPropagation()">
+
+        <div class="dialog-icon text-icon">
+          T
+        </div>
+
+        <div class="dialog-content">
+
+          <span class="dialog-eyebrow">
+            EDITOR DE PLANO
+          </span>
+
+          <h2>Añadir texto</h2>
+
+          <p>
+            Introduce el texto que quieres colocar en el plano.
+          </p>
+
+          <ion-input
+            class="text-input"
+            label="Texto"
+            labelPlacement="stacked"
+            placeholder="Ej. Barra, Cocina, Entrada..."
+            [(ngModel)]="newText"
+            (keydown.enter)="confirmAddText()">
+          </ion-input>
+
+          <div class="dialog-actions">
+
+            <ion-button
+              class="dialog-secondary"
+              (click)="closeTextDialog()">
+              Cancelar
+            </ion-button>
+
+            <ion-button
+              class="dialog-button"
+              [disabled]="!newText.trim()"
+              (click)="confirmAddText()">
+              Añadir texto
+            </ion-button>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showSaveDialog) {
+    <div
+      class="dialog-backdrop"
+      (click)="closeSaveDialog()">
+
+      <div
+        class="save-dialog"
+        (click)="$event.stopPropagation()">
+
+        <div class="dialog-icon">
+          ✓
+        </div>
+
+        <div class="dialog-content">
+
+          <span class="dialog-eyebrow">
+            SALA CHOCOLATTE
+          </span>
+
+          <h2>Diseño guardado</h2>
+
+          <p>
+            El diseño del plano se ha guardado correctamente.
+          </p>
+
+          <ion-button
+            class="dialog-button"
+            expand="block"
+            (click)="closeSaveDialog()">
+            Continuar
+          </ion-button>
+
+        </div>
+      </div>
+    </div>
+  }
+</div>

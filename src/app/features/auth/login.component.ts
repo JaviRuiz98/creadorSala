@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon } from '@ionic/angular/standalone';
+import { IonContent, IonInput, IonInputPasswordToggle, IonButton, IonText, IonSpinner, IonIcon } from '@ionic/angular/standalone';
 import { lockClosedOutline, logInOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { AuthService } from '../../core/auth/auth.service';
@@ -9,7 +9,7 @@ import { AuthService } from '../../core/auth/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon],
+  imports: [FormsModule, IonContent, IonInput, IonInputPasswordToggle, IonButton, IonText, IonSpinner, IonIcon],
   template: `
     <ion-content [fullscreen]="true" class="login-page">
       <main class="login-layout">
@@ -28,13 +28,13 @@ import { AuthService } from '../../core/auth/auth.service';
 
             <form (ngSubmit)="submit()">
               <ion-input
-                label="Email"
+                label="Usuario"
                 labelPlacement="stacked"
-                type="email"
+                type="text"
                 autocomplete="username"
                 fill="outline"
-                [(ngModel)]="email"
-                name="email"
+                [(ngModel)]="username"
+                name="username"
                 required
               ></ion-input>
 
@@ -47,7 +47,9 @@ import { AuthService } from '../../core/auth/auth.service';
                 [(ngModel)]="password"
                 name="password"
                 required
-              ></ion-input>
+              >
+                <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+              </ion-input>
 
               @if (error()) {
                 <ion-text color="danger" class="error-message">
@@ -55,7 +57,7 @@ import { AuthService } from '../../core/auth/auth.service';
                 </ion-text>
               }
 
-              <ion-button type="submit" expand="block" size="large" [disabled]="loading() || !email || !password">
+              <ion-button type="submit" expand="block" size="large" [disabled]="loading() || !username || !password">
                 @if (loading()) {
                   <ion-spinner name="crescent"></ion-spinner>
                 } @else {
@@ -96,7 +98,7 @@ import { AuthService } from '../../core/auth/auth.service';
   `]
 })
 export class LoginComponent {
-  email = '';
+  username = '';
   password = '';
   loading = signal(false);
   error = signal('');
@@ -109,7 +111,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     try {
-      await this.auth.signIn(this.email.trim(), this.password);
+      await this.auth.signIn(this.username.trim(), this.password);
       await this.router.navigateByUrl('/');
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'No se pudo iniciar sesión');

@@ -1,0 +1,359 @@
+<ion-header>
+  <ion-toolbar>
+    <div class="topbar">
+      <div class="brand-mini"><span>SALA</span><strong>CHOCOLATTE</strong></div>
+      <div class="topbar-title">
+        <span>Gestión de sala</span><small>{{ activeLabel }}</small>
+      </div>
+      <div class="top-actions">
+        <div class="connection"><span></span>Conectado</div>
+        @if (isAdmin) {
+          <ion-button fill="outline" class="users-button" (click)="openUserAccessDialog()"
+            ><ion-icon name="person-add-outline" slot="start"></ion-icon>Usuarios</ion-button
+          >
+        }
+        <ion-button fill="clear" class="logout-button" (click)="logout()"><ion-icon name="log-out-outline"></ion-icon></ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="nav-wrap">
+    <ion-segment [value]="activeTab()" (ionChange)="activeTab.set($any($event.detail.value))">
+      @if (isAdmin) {
+        <ion-segment-button value="planos"><ion-label>Planos</ion-label></ion-segment-button>
+      }
+      <ion-segment-button value="operativo">
+        <ion-label
+          >Operativa
+          @if (pendingCount() > 0) {
+            <ion-badge color="danger">{{ pendingCount() }}</ion-badge>
+          }
+        </ion-label>
+      </ion-segment-button>
+      @if (isAdmin) {
+        <ion-segment-button value="productos"><ion-label>Productos</ion-label></ion-segment-button>
+      }
+    </ion-segment>
+  </div>
+
+  @if (!configured) {
+    <div class="notice">Configura Supabase en <code>.env</code>.</div>
+  } @else if (activeTab() === 'planos' && isAdmin) {
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <span class="eyebrow">DISEÑO DE SALA</span>
+          <h1>Planos</h1>
+          <p>Organiza las zonas, mesas y reservados de la sala.</p>
+        </div>
+        <ion-button class="primary-button" (click)="openCreatePlanDialog()"
+          ><ion-icon name="add-outline" slot="start"></ion-icon>Nuevo plano</ion-button
+        >
+      </div>
+      <div class="plans">
+        @for (plan of plans(); track plan.id) {
+          <article class="plan-card" (click)="openPlan(plan)">
+            <div class="plan-preview">{{ plan.name.charAt(0).toUpperCase() }}</div>
+            <div class="plan-info">
+              <h2>{{ plan.name }}</h2>
+              <p>{{ plan.width }} × {{ plan.height }} · Plano de sala</p>
+            </div>
+            <div class="plan-actions">
+              <ion-button size="small" fill="outline" (click)="$event.stopPropagation(); openEditor(plan)"
+                ><ion-icon name="settings-outline" slot="start"></ion-icon>Editar</ion-button
+              >
+              <ion-button size="small" fill="outline" (click)="$event.stopPropagation(); openRenamePlanDialog(plan)">Nombre</ion-button>
+              <ion-button size="small" fill="outline" (click)="$event.stopPropagation(); askDuplicate(plan)"
+                ><ion-icon name="copy-outline" slot="start"></ion-icon>Copiar</ion-button
+              >
+              <ion-button size="small" fill="outline" color="danger" (click)="$event.stopPropagation(); askRemovePlan(plan)"
+                ><ion-icon name="trash-outline" slot="start"></ion-icon>Eliminar</ion-button
+              >
+            </div>
+          </article>
+        } @empty {
+          <div class="empty">
+            <div>▧</div>
+            <h2>Aún no hay planos</h2>
+            <p>Crea el primer plano de la sala para empezar.</p>
+            <ion-button class="primary-button" (click)="openCreatePlanDialog()">Crear plano</ion-button>
+          </div>
+        }
+      </div>
+    </main>
+  } @else if (activeTab() === 'operativo') {
+    <main class="page operative-page">
+      <div class="page-head compact">
+        <div>
+          <span class="eyebrow">OPERATIVA</span>
+          <h1>Mesas, reservados y productos</h1>
+          <p>El plano queda a la izquierda y el control de bebidas a la derecha.</p>
+        </div>
+        <div class="select-actions">
+          <ion-select
+            label="Plano"
+            labelPlacement="stacked"
+            [value]="selectedPlan()?.id"
+            (ionChange)="openPlanById($any($event.detail.value))"
+          >
+            @for (p of plans(); track p.id) {
+              <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option>
+            }
+          </ion-select>
+          @if (isAdmin) {
+            <ion-button fill="outline" class="secondary-button" (click)="toggleEditorMode()">{{
+              editorMode() === 'editor' ? 'Ver operativo' : 'Editar plano'
+            }}</ion-button>
+          }
+        </div>
+      </div>
+
+      @if (selectedPlan()) {
+        <div class="operative-layout">
+          <div class="plan-column">
+            <app-plan-editor [plan]="selectedPlan()!" [mode]="editorMode()" (pendingChanged)="pendingCount.set($event)"></app-plan-editor>
+          </div>
+          @if (editorMode() === 'operativo') {
+            <app-table-product-panel [plan]="selectedPlan()!"></app-table-product-panel>
+          } @else {
+            <aside class="editor-placeholder">
+              <strong>Modo editor</strong><span>El panel de productos se muestra en modo operativo para no interferir con el diseño.</span>
+            </aside>
+          }
+        </div>
+      } @else {
+        <div class="empty">
+          <div>◫</div>
+          <h2>Selecciona un plano</h2>
+          <p>Crea o selecciona un plano para comenzar.</p>
+        </div>
+      }
+    </main>
+  } @else if (isAdmin) {
+    <main class="page products">
+      <div class="page-head">
+        <div>
+          <span class="eyebrow">CATÁLOGO</span>
+          <h1>Productos</h1>
+          <p>Gestiona las bebidas disponibles para los pedidos.</p>
+        </div>
+      </div>
+      <div class="category-create">
+        <ion-input label="Nueva categoría" labelPlacement="stacked" fill="outline" [(ngModel)]="newCategory"></ion-input>
+        <ion-button class="primary-button" (click)="createCategory()">Añadir categoría</ion-button>
+      </div>
+      @for (category of categories(); track category.id) {
+        <section class="category-card">
+          <h2>{{ category.name }}</h2>
+          @for (product of productsFor(category.id); track product.id) {
+            <div class="product-row">
+              <span>{{ product.name }}</span
+              ><strong>{{ product.price | number: '1.2-2' }} €</strong>
+            </div>
+          }
+          <div class="category-add">
+            <ion-input label="Producto" labelPlacement="stacked" fill="outline" [(ngModel)]="newProductName[category.id]"></ion-input>
+            <ion-input
+              label="Precio"
+              type="number"
+              labelPlacement="stacked"
+              fill="outline"
+              [(ngModel)]="newProductPrice[category.id]"
+            ></ion-input>
+            <ion-button class="primary-button" (click)="createProduct(category.id)">Añadir</ion-button>
+          </div>
+        </section>
+      }
+    </main>
+  }
+</ion-content>
+
+<ion-modal [isOpen]="createPlanDialog()" [backdropDismiss]="false" class="create-plan-modal" (didDismiss)="closeCreatePlanDialog()">
+  <ng-template>
+    <div class="plan-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="dialog-eyebrow">NUEVO PLANO</span>
+          <h2>Crear plano</h2>
+          <p>Añade un nombre para identificar este plano.</p>
+        </div>
+        <button type="button" class="dialog-close" (click)="closeCreatePlanDialog()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+      <div class="dialog-body">
+        <ion-input
+          label="Nombre del plano"
+          labelPlacement="stacked"
+          fill="outline"
+          placeholder="Ej. Sala principal"
+          [(ngModel)]="newPlanName"
+          (keydown.enter)="createPlan()"
+        ></ion-input>
+      </div>
+      <div class="dialog-actions">
+        <ion-button fill="outline" class="secondary-button" (click)="closeCreatePlanDialog()">Cancelar</ion-button
+        ><ion-button class="primary-button" [disabled]="!newPlanName.trim()" (click)="createPlan()">Crear plano</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="userAccessDialog()" [backdropDismiss]="false" class="create-plan-modal" (didDismiss)="closeUserAccessDialog()">
+  <ng-template>
+    <div class="plan-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="dialog-eyebrow">ADMINISTRACIÓN</span>
+          <h2>Acceso a usuarios</h2>
+          <p>Introduce la contraseña adicional para gestionar usuarios.</p>
+        </div>
+        <button type="button" class="dialog-close" (click)="closeUserAccessDialog()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+      <div class="dialog-body">
+        <ion-input
+          label="Contraseña de administración"
+          type="password"
+          labelPlacement="stacked"
+          fill="outline"
+          [(ngModel)]="adminAccessPassword"
+          (keydown.enter)="verifyUserAccess()"
+        >
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+        @if (userAccessError()) {
+          <p class="form-error">{{ userAccessError() }}</p>
+        }
+      </div>
+      <div class="dialog-actions">
+        <ion-button fill="outline" class="secondary-button" (click)="closeUserAccessDialog()">Cancelar</ion-button>
+        <ion-button class="primary-button" [disabled]="!adminAccessPassword || verifyingUserAccess()" (click)="verifyUserAccess()">{{
+          verifyingUserAccess() ? 'Comprobando…' : 'Acceder'
+        }}</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="createUserDialog()" [backdropDismiss]="false" class="user-create-modal" (didDismiss)="closeCreateUserDialog()">
+  <ng-template>
+    <div class="plan-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="dialog-eyebrow">ADMINISTRACIÓN</span>
+          <h2>Crear usuario</h2>
+          <p>La cuenta se creará en Supabase con el rol seleccionado.</p>
+        </div>
+        <button type="button" class="dialog-close" (click)="closeCreateUserDialog()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+      <div class="dialog-body user-form">
+        <ion-input label="Nombre" labelPlacement="stacked" fill="outline" [(ngModel)]="newUserFullName"></ion-input>
+        <ion-input label="Nombre de usuario" type="text" autocomplete="off" labelPlacement="stacked" fill="outline" [(ngModel)]="newUserUsername"></ion-input>
+        <p class="field-help">Usa al menos 3 caracteres. Se admiten letras, números, punto, guion y guion bajo.</p>
+        <ion-input
+          label="Contraseña del nuevo usuario"
+          type="password"
+          labelPlacement="stacked"
+          fill="outline"
+          [(ngModel)]="newUserPassword"
+        >
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+        <ion-select label="Rol" labelPlacement="stacked" fill="outline" [(ngModel)]="newUserRole">
+          <ion-select-option value="USER">Usuario (USER)</ion-select-option>
+          <ion-select-option value="ADMIN">Administrador (ADMIN)</ion-select-option>
+        </ion-select>
+        @if (createUserError()) {
+          <p class="form-error">{{ createUserError() }}</p>
+        }
+      </div>
+      <div class="dialog-actions">
+        <ion-button fill="outline" class="secondary-button" (click)="closeCreateUserDialog()">Cancelar</ion-button>
+        <ion-button class="primary-button" [disabled]="!canCreateUser || creatingUser()" (click)="createUser()">{{
+          creatingUser() ? 'Creando…' : 'Crear usuario'
+        }}</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="copyPlanDialog()" [backdropDismiss]="false" class="create-plan-modal" (didDismiss)="closeCopyDialog()">
+  <ng-template>
+    <div class="plan-dialog confirm-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="dialog-eyebrow">COPIAR PLANO</span>
+          <h2>Copiar «{{ planToCopy()?.name }}»</h2>
+          <p>Se creará un plano idéntico e independiente. Indica el nombre de la nueva copia.</p>
+        </div>
+      </div>
+      <div class="dialog-body">
+        <ion-input label="Nombre de la copia" labelPlacement="stacked" fill="outline" [(ngModel)]="copyPlanName" (keydown.enter)="confirmDuplicate()"></ion-input>
+      </div>
+      <div class="dialog-actions">
+        <ion-button fill="outline" class="secondary-button" (click)="closeCopyDialog()">No</ion-button>
+        <ion-button class="primary-button" [disabled]="!copyPlanName.trim()" (click)="confirmDuplicate()">Sí, copiar</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="renamePlanDialog()" [backdropDismiss]="false" class="create-plan-modal" (didDismiss)="closeRenamePlanDialog()">
+  <ng-template>
+    <div class="plan-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="dialog-eyebrow">EDITAR PLANO</span>
+          <h2>Cambiar nombre</h2>
+          <p>Modifica el nombre con el que aparecerá este diseño en el listado.</p>
+        </div>
+      </div>
+      <div class="dialog-body">
+        <ion-input label="Nombre del diseño" labelPlacement="stacked" fill="outline" [(ngModel)]="renamePlanName" (keydown.enter)="confirmRenamePlan()"></ion-input>
+      </div>
+      <div class="dialog-actions">
+        <ion-button fill="outline" class="secondary-button" (click)="closeRenamePlanDialog()">Cancelar</ion-button>
+        <ion-button class="primary-button" [disabled]="!renamePlanName.trim()" (click)="confirmRenamePlan()">Guardar</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="deletePlanDialog()" [backdropDismiss]="false" class="create-plan-modal danger-plan-modal" (didDismiss)="closeDeletePlanDialog()">
+  <ng-template>
+    <div class="plan-dialog danger-dialog">
+      <div class="danger-symbol">!</div>
+      <div class="dialog-header alert-header">
+        <div>
+          <span class="dialog-eyebrow">ELIMINAR PLANO</span>
+          <h2>¿Eliminar «{{ planToDelete()?.name }}»?</h2>
+          <p>Esta acción eliminará el plano de forma definitiva.</p>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <ion-button fill="outline" class="secondary-button" (click)="closeDeletePlanDialog()">No</ion-button>
+        <ion-button color="danger" (click)="confirmRemovePlan()">Sí, eliminar</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="newOrderAlert()" [backdropDismiss]="false" class="create-plan-modal order-alert-modal">
+  <ng-template>
+    <div class="plan-dialog order-alert-card">
+      <div class="alert-symbol">!</div>
+      <div class="dialog-header alert-header">
+        <div>
+          <span class="dialog-eyebrow">NUEVO PEDIDO</span>
+          <h2>SE HA HECHO UN PEDIDO</h2>
+          <p>Hay un nuevo pedido pendiente en la sala.</p>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <ion-button class="primary-button" expand="block" (click)="acknowledgeNewOrder()">Aceptar</ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-toast [isOpen]="toast() !== ''" [message]="toast()" [duration]="2200" (didDismiss)="toast.set('')"></ion-toast>
