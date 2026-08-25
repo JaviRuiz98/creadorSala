@@ -638,7 +638,9 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.layer.add(reservedText);
   }
   private selectTable(t: ClubTable) {
-    if (this.mode === 'operativo' && this.selectedTable?.id === t.id) {
+    if (this.mode === 'operativo') {
+      // En operativa, una mesa abre siempre el modal global al primer toque.
+      // No usamos ya el antiguo panel lateral dentro del canvas.
       void this.openOrderDialog(t);
       return;
     }
@@ -646,11 +648,11 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.selectedReserved = null;
     this.selectedElementId = null;
     this.activeEndpoint = null;
-    if (this.mode === 'operativo') void this.loadOrdersForTarget(t);
     this.render();
   }
   private selectReserved(r: ClubTable) {
-    if (this.mode === 'operativo' && this.selectedReserved?.id === r.id) {
+    if (this.mode === 'operativo') {
+      // Igual que las mesas: primer toque = modal global.
       void this.openOrderDialog(r);
       return;
     }
@@ -658,7 +660,6 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.selectedTable = null;
     this.selectedElementId = null;
     this.activeEndpoint = null;
-    if (this.mode === 'operativo') void this.loadOrdersForTarget(r);
     this.render();
   }
   private async openOrderDialog(target: ClubTable) {
@@ -902,6 +903,9 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     }
   }
   ngOnDestroy() {
+    // Evita que un overlay de pedidos sobreviva al abandonar el editor/sesión.
+    this.showOrderDialog = false;
+    this.selectedOrderTarget = null;
     if (this.realtimeChannel) {
       this.realtimeChannel.unsubscribe();
     }

@@ -54,66 +54,8 @@
     (pointercancel)="pointerUp($event)">
   </div>
 
-@if (mode === 'operativo' && (selectedTable || selectedReserved)) {
-    <aside class="orders-panel">
-      <div class="orders-head">
-        <strong>
-          {{ selectedTable ? 'Mesa' : 'Reservado' }}
-          {{ (selectedTable || selectedReserved)?.number }}
-        </strong>
-        <span>{{ selectedPending }} pendientes</span>
-      </div>
 
-      <div class="order-list">
-        @for (item of orderItems(); track item.id) {
-          <div class="order-list-item">
-            <ion-label>
-              <strong>{{ item.product.name }}</strong>
-              <span> × {{ item.quantity }}</span>
-              <small>
-                {{ item.status === 'PENDING' ? '🔴 Pendiente' : '🟢 Puesto' }}
-              </small>
-            </ion-label>
 
-            @if (item.status === 'PENDING' && canManageOrders) {
-              <ion-button class="small-action" size="small" (click)="markPlaced(item.id)">Puesta</ion-button>
-            }
-          </div>
-        }
-      </div>
-
-      @if (canManageOrders) { <div class="add-order">
-        <ion-select
-          label="Producto"
-          labelPlacement="stacked"
-          [(ngModel)]="selectedProductId">
-
-          @for (p of products; track p.id) {
-            <ion-select-option [value]="p.id">
-              {{ p.name }}
-            </ion-select-option>
-          }
-        </ion-select>
-
-        <ion-input
-          label="Cantidad"
-          type="number"
-          min="1"
-          step="1"
-          labelPlacement="stacked"
-          [(ngModel)]="quantity">
-        </ion-input>
-
-        <ion-button
-          class="editor-button primary full"
-          expand="block"
-          [disabled]="!selectedProductId || quantity < 1"
-          (click)="addOrderItem()">
-          Añadir
-        </ion-button>
-      </div> }
-    </aside>
-  }
 
   <ion-modal
     [isOpen]="showOrderDialog"

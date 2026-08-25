@@ -111,6 +111,37 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private channel: any;
   private userOrderChannel: any;
 
+
+  /**
+   * Limpia cualquier estado visual transitorio para que una nueva sesión
+   * nunca herede diálogos, formularios ni avisos de la sesión anterior.
+   */
+  private resetTransientUi(): void {
+    this.createPlanDialog.set(false);
+    this.userAccessDialog.set(false);
+    this.createUserDialog.set(false);
+    this.copyPlanDialog.set(false);
+    this.renamePlanDialog.set(false);
+    this.deletePlanDialog.set(false);
+    this.newOrderAlert.set(false);
+    this.toast.set('');
+
+    this.newPlanName = '';
+    this.adminAccessPassword = '';
+    this.userAccessError.set('');
+    this.createUserError.set('');
+    this.verifiedAdminPassword = '';
+    this.newUserFullName = '';
+    this.newUserUsername = '';
+    this.newUserPassword = '';
+    this.newUserRole = 'USER';
+    this.planToCopy.set(null);
+    this.copyPlanName = '';
+    this.planToRename.set(null);
+    this.renamePlanName = '';
+    this.planToDelete.set(null);
+  }
+
   constructor(
     private auth: AuthService,
     private floors: FloorPlanService,
@@ -166,6 +197,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    // Una sesión nueva siempre parte con todos los overlays cerrados.
+    this.resetTransientUi();
     try {
       this.plans.set(await this.floors.list());
       this.categories.set(await this.product.categories());
@@ -453,6 +486,12 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   async logout(): Promise<void> {
+    // Cerramos los overlays antes de abandonar la sesión actual.
+    this.resetTransientUi();
+    this.channel?.unsubscribe?.();
+    this.userOrderChannel?.unsubscribe?.();
+    this.channel = null;
+    this.userOrderChannel = null;
     try {
       await this.auth.signOut();
     } catch (error) {
