@@ -43,3 +43,9 @@ Angular standalone + Ionic para UI responsive/táctil. Supabase JS accede direct
 - La conversión dibujo→plano es determinista y deliberadamente conservadora; produce segmentos ortogonales y requiere corrección manual.
 - Offline solo cubre shell/cache; las mutaciones requieren conexión.
 - La administración avanzada de usuarios se deja en Supabase Dashboard/SQL para evitar un panel no solicitado.
+
+## Estado acumulado de esta entrega
+
+Esta entrega conserva las correcciones acumuladas: roles ADMIN/USER, usuarios por nombre de usuario, Edge Function `create-user` con CORS y validación de sesión, contraseñas protegidas por RPC con `extensions.crypt`, entrada ADMIN en Planos, borrado protegido, `attended=true` => líneas PENDING a PLACED, precio de producto oculto/nullable y aviso Realtime mediante diálogo `HAY NUEVOS PEDIDOS` con botón `Continuar`.
+
+GitHub Pages queda preparado para el repositorio `creadorSala` mediante `.github/workflows/deploy.yml` y `--base-href /creadorSala/`.

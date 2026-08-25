@@ -21,7 +21,9 @@
             "outputPath": "dist/discoteca",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
@@ -43,9 +45,7 @@
               "node_modules/@ionic/angular/css/flex-utils.css"
             ],
             "scripts": [],
-            "serviceWorker": "ngsw-config.json",
-            "baseHref": "/discoteca/",
-            "deployUrl": "/discoteca/"
+            "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
             "production": {
