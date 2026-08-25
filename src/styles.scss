@@ -20,3 +20,146 @@ ion-content { --background: #f7f4f1; }
 ion-toolbar { --background: #fff; --color: #2d211b; --border-color: #eadfd8; }
 ion-segment { --background: #fff; }
 ion-item { --background: #fff; --border-color: #eee4de; }
+
+/* =========================================================
+   MODAL DE PEDIDOS - OVERLAY GLOBAL / RESPONSIVE
+   Ionic renderiza los overlays fuera del árbol encapsulado del
+   componente, por lo que estas reglas deben ser globales.
+   ========================================================= */
+ion-modal.order-modal {
+  --width: min(640px, calc(100vw - 24px));
+  --height: min(820px, calc(100vh - 24px));
+  --max-height: calc(100vh - 24px);
+  --border-radius: 20px;
+  --backdrop-opacity: .48;
+  z-index: 50000;
+}
+
+ion-modal.order-modal::part(backdrop) {
+  background: rgba(38, 25, 18, .58);
+}
+
+ion-modal.order-modal::part(content) {
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(35, 23, 17, .30);
+}
+
+ion-modal.order-modal .order-dialog {
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 20px !important;
+  box-shadow: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+ion-modal.order-modal .order-dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fffaf7;
+}
+
+ion-modal.order-modal .current-order {
+  flex: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 640px) {
+  ion-modal.order-modal {
+    --width: 100vw;
+    --height: 100vh;
+    --max-height: 100vh;
+    --border-radius: 0;
+  }
+
+  @supports (height: 100dvh) {
+    ion-modal.order-modal {
+      --height: 100dvh;
+      --max-height: 100dvh;
+    }
+  }
+
+  ion-modal.order-modal::part(content) {
+    border-radius: 0;
+  }
+
+  ion-modal.order-modal .order-dialog {
+    border-radius: 0 !important;
+    min-height: 100%;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  ion-modal.order-modal .order-dialog-header {
+    padding: 12px 14px !important;
+  }
+
+  ion-modal.order-modal .order-dialog-header h2 {
+    font-size: 20px !important;
+  }
+
+  ion-modal.order-modal .current-order {
+    padding: 12px 14px !important;
+  }
+
+  ion-modal.order-modal .order-item {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  ion-modal.order-modal .order-item-info {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  ion-modal.order-modal .order-item-info strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  ion-modal.order-modal .quantity-editor {
+    flex: 0 0 auto;
+  }
+
+  ion-modal.order-modal .add-order-dialog {
+    padding: 10px 14px !important;
+  }
+
+  ion-modal.order-modal .attention-question {
+    padding: 10px 14px 5px !important;
+  }
+
+  ion-modal.order-modal .attention-actions {
+    padding: 5px 14px 14px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  ion-modal.order-modal .order-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  ion-modal.order-modal .quantity-editor {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  ion-modal.order-modal .add-product-row {
+    grid-template-columns: minmax(0, 1fr) 72px !important;
+  }
+
+  ion-modal.order-modal .add-product-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

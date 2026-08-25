@@ -49,3 +49,6 @@ Angular standalone + Ionic para UI responsive/táctil. Supabase JS accede direct
 Esta entrega conserva las correcciones acumuladas: roles ADMIN/USER, usuarios por nombre de usuario, Edge Function `create-user` con CORS y validación de sesión, contraseñas protegidas por RPC con `extensions.crypt`, entrada ADMIN en Planos, borrado protegido, `attended=true` => líneas PENDING a PLACED, precio de producto oculto/nullable y aviso Realtime mediante diálogo `HAY NUEVOS PEDIDOS` con botón `Continuar`.
 
 GitHub Pages queda preparado para el repositorio `creadorSala` mediante `.github/workflows/deploy.yml` y `--base-href /creadorSala/`.
+
+### Responsive order modal
+The order detail overlay is styled globally in `src/styles.scss` because Ionic renders modal overlays outside Angular component style encapsulation. On phones it opens full-screen with internal vertical scrolling and safe-area support.
