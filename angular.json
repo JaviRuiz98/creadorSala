@@ -45,7 +45,7 @@
             "scripts": [],
             "serviceWorker": "ngsw-config.json",
             "baseHref": "/discoteca/",
-            "deployUrl": "/discoteca/"
+            "deployUrl": "/creadorSala/"
           },
           "configurations": {
             "production": {
