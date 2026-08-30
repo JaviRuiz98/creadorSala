@@ -11,23 +11,61 @@ export class AuthService {
   readonly profile = signal<Profile | null>(null);
   readonly ready = signal(false);
 
+  private readonly sessionStartedAtKey = 'creadorSala.sessionStartedAt';
+  private readonly maxSessionDurationMs = 12 * 60 * 60 * 1000;
+  private expiryTimer: number | null = null;
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly errors: ErrorMessageService,
   ) {
     if (!supabase.configured) { this.ready.set(true); return; }
+
     void this.init();
-    supabase.client.auth.onAuthStateChange((_event, session) => {
+
+    supabase.client.auth.onAuthStateChange((event, session) => {
       this.session.set(session);
-      if (session?.user) void this.loadProfile(session.user);
-      else this.profile.set(null);
+
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        this.profile.set(null);
+        this.clearSessionLifetime();
+        return;
+      }
+
+      void this.loadProfile(session.user);
+      this.scheduleSessionExpiry();
     });
+
+    // Si el equipo permanece abierto/suspendido, al volver a la aplicación
+    // se comprueba de nuevo el límite absoluto de 12 horas.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') void this.enforceSessionLifetime();
+    });
+    window.addEventListener('focus', () => void this.enforceSessionLifetime());
   }
 
   private async init(): Promise<void> {
     const { data } = await this.supabase.client.auth.getSession();
+
+    if (data.session && this.isSessionExpired()) {
+      await this.forceExpiredSignOut();
+      this.ready.set(true);
+      return;
+    }
+
+    // Una sesión antigua creada antes de implantar el límite de 12 h no tiene
+    // marca de inicio. Por seguridad se cierra y se exige iniciar sesión otra vez.
+    if (data.session && !this.getSessionStartedAt()) {
+      await this.forceExpiredSignOut();
+      this.ready.set(true);
+      return;
+    }
+
     this.session.set(data.session);
-    if (data.session?.user) await this.loadProfile(data.session.user);
+    if (data.session?.user) {
+      await this.loadProfile(data.session.user);
+      this.scheduleSessionExpiry();
+    }
     this.ready.set(true);
   }
 
@@ -42,13 +80,87 @@ export class AuthService {
       ? cleanIdentifier.toLowerCase()
       : usernameToInternalEmail(cleanIdentifier);
 
-    const { error } = await this.supabase.client.auth.signInWithPassword({ email, password });
+    const { data, error } = await this.supabase.client.auth.signInWithPassword({ email, password });
     if (error) throw new Error(this.errors.humanize(error, 'No se pudo iniciar sesión'));
+
+    if (!data.session) {
+      throw new Error('Supabase no devolvió una sesión válida');
+    }
+
+    localStorage.setItem(this.sessionStartedAtKey, String(Date.now()));
+    this.session.set(data.session);
+    if (data.session.user) await this.loadProfile(data.session.user);
+    this.scheduleSessionExpiry();
   }
 
   async signOut(): Promise<void> {
+    this.clearSessionLifetime();
     const {error}=await this.supabase.client.auth.signOut();
+    this.session.set(null);
+    this.profile.set(null);
     if(error) throw error;
+  }
+
+  private getSessionStartedAt(): number | null {
+    const raw = localStorage.getItem(this.sessionStartedAtKey);
+    if (!raw) return null;
+    const value = Number(raw);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  private isSessionExpired(): boolean {
+    const startedAt = this.getSessionStartedAt();
+    if (!startedAt) return false;
+    return Date.now() - startedAt >= this.maxSessionDurationMs;
+  }
+
+  private scheduleSessionExpiry(): void {
+    if (this.expiryTimer !== null) {
+      window.clearTimeout(this.expiryTimer);
+      this.expiryTimer = null;
+    }
+
+    const startedAt = this.getSessionStartedAt();
+    if (!startedAt || !this.session()) return;
+
+    const remaining = this.maxSessionDurationMs - (Date.now() - startedAt);
+    if (remaining <= 0) {
+      void this.forceExpiredSignOut();
+      return;
+    }
+
+    this.expiryTimer = window.setTimeout(() => {
+      void this.forceExpiredSignOut();
+    }, remaining);
+  }
+
+  private async enforceSessionLifetime(): Promise<void> {
+    if (!this.session()) return;
+
+    if (!this.getSessionStartedAt() || this.isSessionExpired()) {
+      await this.forceExpiredSignOut();
+      return;
+    }
+
+    this.scheduleSessionExpiry();
+  }
+
+  private async forceExpiredSignOut(): Promise<void> {
+    this.clearSessionLifetime();
+    try {
+      await this.supabase.client.auth.signOut();
+    } finally {
+      this.session.set(null);
+      this.profile.set(null);
+    }
+  }
+
+  private clearSessionLifetime(): void {
+    localStorage.removeItem(this.sessionStartedAtKey);
+    if (this.expiryTimer !== null) {
+      window.clearTimeout(this.expiryTimer);
+      this.expiryTimer = null;
+    }
   }
 
   async whenReady(): Promise<void> {
