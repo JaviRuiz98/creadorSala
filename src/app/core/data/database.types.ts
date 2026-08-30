@@ -111,6 +111,27 @@ export interface Database {
         };
         Returns: Json;
       };
+
+
+      product_has_order_history: {
+        Args: { p_product_id: string };
+        Returns: boolean;
+      };
+
+      category_has_order_history: {
+        Args: { p_category_id: string };
+        Returns: boolean;
+      };
+
+      delete_product_safe: {
+        Args: { p_product_id: string };
+        Returns: boolean;
+      };
+
+      delete_category_safe: {
+        Args: { p_category_id: string };
+        Returns: boolean;
+      };
     };
 
     Enums: {

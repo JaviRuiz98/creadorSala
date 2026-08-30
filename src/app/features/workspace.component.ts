@@ -30,6 +30,7 @@ import {
   personAddOutline,
   checkmarkCircleOutline,
   alertCircleOutline,
+  createOutline,
 } from 'ionicons/icons';
 
 import { AuthService } from '../core/auth/auth.service';
@@ -107,6 +108,19 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   deletePlanDialog = signal(false);
   planToDelete = signal<FloorPlan | null>(null);
   newOrderAlert = signal(false);
+
+  editCategoryDialog = signal(false);
+  categoryToEdit = signal<ProductCategory | null>(null);
+  editCategoryName = '';
+  editProductDialog = signal(false);
+  productToEdit = signal<Product | null>(null);
+  editProductName = '';
+  catalogDeleteDialog = signal(false);
+  catalogDeleteBlocked = signal(false);
+  catalogDeleteChecking = signal(false);
+  catalogDeleteError = signal('');
+  categoryToDelete = signal<ProductCategory | null>(null);
+  productToDelete = signal<Product | null>(null);
   private verifiedAdminPassword = '';
   private channel: any;
   private userOrderChannel: any;
@@ -124,6 +138,18 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.renamePlanDialog.set(false);
     this.deletePlanDialog.set(false);
     this.newOrderAlert.set(false);
+    this.editCategoryDialog.set(false);
+    this.editProductDialog.set(false);
+    this.catalogDeleteDialog.set(false);
+    this.catalogDeleteBlocked.set(false);
+    this.catalogDeleteChecking.set(false);
+    this.catalogDeleteError.set('');
+    this.categoryToEdit.set(null);
+    this.productToEdit.set(null);
+    this.categoryToDelete.set(null);
+    this.productToDelete.set(null);
+    this.editCategoryName = '';
+    this.editProductName = '';
     this.toast.set('');
 
     this.newPlanName = '';
@@ -163,6 +189,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       personAddOutline,
       checkmarkCircleOutline,
       alertCircleOutline,
+      createOutline,
     });
     this.configured = (this.floors as any).db.configured;
   }
@@ -482,6 +509,141 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.toast.set('Producto añadido');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'No se pudo crear el producto');
+    }
+  }
+
+  openEditCategory(category: ProductCategory): void {
+    if (!this.isAdmin) return;
+    this.categoryToEdit.set(category);
+    this.editCategoryName = category.name;
+    this.editCategoryDialog.set(true);
+  }
+
+  closeEditCategory(): void {
+    this.editCategoryDialog.set(false);
+    this.categoryToEdit.set(null);
+    this.editCategoryName = '';
+  }
+
+  async saveCategoryName(): Promise<void> {
+    const category = this.categoryToEdit();
+    const name = this.editCategoryName.trim();
+    if (!this.isAdmin || !category || !name) return;
+    try {
+      await this.product.updateCategory(category.id, name);
+      this.categories.update((items) => items.map((item) => item.id === category.id ? { ...item, name } : item));
+      this.closeEditCategory();
+      this.toast.set('Nombre de categoría actualizado');
+    } catch (error) {
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo actualizar la categoría');
+    }
+  }
+
+  openEditProduct(product: Product): void {
+    if (!this.isAdmin) return;
+    this.productToEdit.set(product);
+    this.editProductName = product.name;
+    this.editProductDialog.set(true);
+  }
+
+  closeEditProduct(): void {
+    this.editProductDialog.set(false);
+    this.productToEdit.set(null);
+    this.editProductName = '';
+  }
+
+  async saveProductName(): Promise<void> {
+    const product = this.productToEdit();
+    const name = this.editProductName.trim();
+    if (!this.isAdmin || !product || !name) return;
+    try {
+      await this.product.updateProduct(product.id, { name });
+      this.products.update((items) => items.map((item) => item.id === product.id ? { ...item, name } : item));
+      this.closeEditProduct();
+      this.toast.set('Nombre de producto actualizado');
+    } catch (error) {
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo actualizar el producto');
+    }
+  }
+
+  async askDeleteProduct(product: Product): Promise<void> {
+    if (!this.isAdmin || this.catalogDeleteChecking()) return;
+    this.catalogDeleteChecking.set(true);
+    this.catalogDeleteError.set('');
+    this.productToDelete.set(product);
+    this.categoryToDelete.set(null);
+    try {
+      const used = await this.product.productHasOrderHistory(product.id);
+      this.catalogDeleteBlocked.set(used);
+      this.catalogDeleteDialog.set(true);
+    } catch (error) {
+      this.productToDelete.set(null);
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo comprobar el producto');
+    } finally {
+      this.catalogDeleteChecking.set(false);
+    }
+  }
+
+  async askDeleteCategory(category: ProductCategory): Promise<void> {
+    if (!this.isAdmin || this.catalogDeleteChecking()) return;
+    this.catalogDeleteChecking.set(true);
+    this.catalogDeleteError.set('');
+    this.categoryToDelete.set(category);
+    this.productToDelete.set(null);
+    try {
+      const used = await this.product.categoryHasOrderHistory(category.id);
+      this.catalogDeleteBlocked.set(used);
+      this.catalogDeleteDialog.set(true);
+    } catch (error) {
+      this.categoryToDelete.set(null);
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo comprobar la categoría');
+    } finally {
+      this.catalogDeleteChecking.set(false);
+    }
+  }
+
+  closeCatalogDeleteDialog(): void {
+    this.catalogDeleteDialog.set(false);
+    this.catalogDeleteBlocked.set(false);
+    this.catalogDeleteError.set('');
+    this.categoryToDelete.set(null);
+    this.productToDelete.set(null);
+  }
+
+  async confirmCatalogDelete(): Promise<void> {
+    if (!this.isAdmin || this.catalogDeleteBlocked() || this.catalogDeleteChecking()) return;
+    const category = this.categoryToDelete();
+    const product = this.productToDelete();
+    if (!category && !product) return;
+    this.catalogDeleteChecking.set(true);
+    this.catalogDeleteError.set('');
+    try {
+      if (product) {
+        const deleted = await this.product.deleteProductSafe(product.id);
+        if (!deleted) {
+          this.catalogDeleteBlocked.set(true);
+          this.catalogDeleteError.set('Este producto acaba de ser utilizado en un pedido y ya no puede eliminarse.');
+          return;
+        }
+        this.products.update((items) => items.filter((item) => item.id !== product.id));
+        this.toast.set('Producto eliminado');
+      } else if (category) {
+        const deleted = await this.product.deleteCategorySafe(category.id);
+        if (!deleted) {
+          this.catalogDeleteBlocked.set(true);
+          this.catalogDeleteError.set('Algún producto de esta categoría acaba de ser utilizado en un pedido y la categoría ya no puede eliminarse.');
+          return;
+        }
+        this.products.update((items) => items.filter((item) => item.category_id !== category.id));
+        this.categories.update((items) => items.filter((item) => item.id !== category.id));
+        delete this.newProductName[category.id];
+        this.toast.set('Categoría eliminada');
+      }
+      this.closeCatalogDeleteDialog();
+    } catch (error) {
+      this.catalogDeleteError.set(error instanceof Error ? error.message : 'No se pudo eliminar');
+    } finally {
+      this.catalogDeleteChecking.set(false);
     }
   }
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#563522"/>
+  <path d="M14 18h36v28H14z" fill="none" stroke="#eadbd0" stroke-width="2"/>
+  <text x="32" y="31" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="800" fill="#ffffff">SALA</text>
+  <text x="32" y="42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="8" font-weight="800" letter-spacing=".4" fill="#eadbd0">CHOCOLATTE</text>
+</svg>
