@@ -160,6 +160,21 @@ export class FloorPlanService {
     if (error) throw error;
   }
 
+  /**
+   * Devuelve únicamente el estado mutable de las mesas/reservados de un plano.
+   * Se usa por Realtime para mantener sincronizado el color del canvas entre
+   * dispositivos sin recargar toda la geometría del plano.
+   */
+  async loadTableAttentionStates(planId: string): Promise<Array<Pick<ClubTable, 'id' | 'attended' | 'updated_at'>>> {
+    const { data, error } = await this.db.client
+      .from('tables')
+      .select('id,attended,updated_at')
+      .eq('floor_plan_id', planId);
+
+    if (error) throw error;
+    return (data ?? []) as Array<Pick<ClubTable, 'id' | 'attended' | 'updated_at'>>;
+  }
+
   async setLocked(planId: string, locked: boolean): Promise<void> {
     const { error } = await this.db.client.from('floor_plans').update({ is_locked: locked }).eq('id', planId);
     if (error) throw error;

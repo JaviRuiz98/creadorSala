@@ -245,9 +245,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       this.realtimeChannel.unsubscribe();
     }
     this.realtimeChannel = this.orders.subscribe(() => {
-      void this.refreshPendingMap();
-      const target = this.selectedOrderTarget ?? this.selectedTable ?? this.selectedReserved;
-      if (target) void this.loadOrdersForTarget(target);
+      void this.syncRealtimeState();
     }, `plan-editor-orders-${this.plan.id}`);
   }
   private initStage() {
@@ -875,6 +873,44 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   private pendingForTable(tableId: string): number {
     return this.pendingMap.get(tableId) ?? 0;
   }
+  /**
+   * Sincroniza en una sola pasada el estado visual y los pedidos después de
+   * cualquier evento Realtime. Así el listado y el color de mesa/reservado
+   * nunca quedan desfasados entre ADMIN y USER.
+   */
+  private async syncRealtimeState(): Promise<void> {
+    await Promise.all([
+      this.refreshTableAttentionStates(),
+      this.refreshPendingMap(),
+    ]);
+
+    const target = this.selectedOrderTarget ?? this.selectedTable ?? this.selectedReserved;
+    if (target) {
+      await this.loadOrdersForTarget(target);
+    }
+
+    this.render();
+  }
+
+  private async refreshTableAttentionStates(): Promise<void> {
+    try {
+      const states = await this.floors.loadTableAttentionStates(this.plan.id);
+      const byId = new Map(states.map((state) => [state.id, state]));
+
+      const apply = (table: ClubTable) => {
+        const state = byId.get(table.id);
+        if (!state) return;
+        table.attended = state.attended;
+        table.updated_at = state.updated_at;
+      };
+
+      this.tables.forEach(apply);
+      this.reserved.forEach(apply);
+    } catch (error) {
+      console.error('Error sincronizando el estado visual de mesas/reservados:', error);
+    }
+  }
+
   private async refreshPendingMap() {
     try {
       const { data, error } = await this.orders.db.client
