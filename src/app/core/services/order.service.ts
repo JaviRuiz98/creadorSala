@@ -49,65 +49,17 @@ export class OrderService {
     };
   }
 
-  async addItem(tableId: string, productId: string, quantity: number, userId: string): Promise<void> {
-    const { data: order, error } = await this.db.client
-      .from('orders')
-      .select('id')
-      .eq('table_id', tableId)
-      .eq('status', 'OPEN')
-      .maybeSingle();
-
-    if (error) throw error;
-
-    let orderId = (order as { id?: string } | null)?.id;
-
-    if (!orderId) {
-      const { data: created, error: createError } = await this.db.client
-        .from('orders')
-        .insert({
-          table_id: tableId,
-          created_by: userId,
-        })
-        .select('id')
-        .single();
-
-      if (createError) throw createError;
-
-      orderId = (created as { id: string }).id;
+  async addItem(tableId: string, productId: string, quantity: number, _userId: string): Promise<void> {
+    if (!productId || quantity < 1) {
+      throw new Error('Producto o cantidad no válidos');
     }
 
-    const { data: existingItem, error: existingError } = await this.db.client
-      .from('order_items')
-      .select('id, quantity')
-      .eq('order_id', orderId)
-      .eq('product_id', productId)
-      .neq('status', 'CANCELLED')
-      .maybeSingle();
-
-    if (existingError) throw existingError;
-
-    if (existingItem) {
-      const current = existingItem as { id: string; quantity: number };
-      const { error: updateError } = await this.db.client
-        .from('order_items')
-        .update({
-          quantity: current.quantity + quantity,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', current.id);
-
-      if (updateError) throw updateError;
-      return;
-    }
-
-    const { error: itemError } = await this.db.client.from('order_items').insert({
-      order_id: orderId,
-      product_id: productId,
-      quantity,
-      created_by: userId,
-    });
-
-    if (itemError) throw itemError;
+    // Centralizamos el alta en la RPC transaccional. Además de evitar carreras
+    // al crear el pedido, la RPC vuelve a poner el producto en PENDING si ya
+    // había sido servido anteriormente y marca la mesa como no atendida.
+    await this.assignProducts(tableId, [
+      { product_id: productId, quantity: Math.floor(quantity) },
+    ]);
   }
 
   async assignProducts(tableId: string, items: ProductAssignmentItem[]): Promise<string> {
