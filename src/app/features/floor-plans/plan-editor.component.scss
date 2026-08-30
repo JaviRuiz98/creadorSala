@@ -875,3 +875,10 @@
     --max-height:calc(100vh - 12px);
   }
 }
+
+.order-item-quantity {
+  min-width: 2.5rem;
+  text-align: center;
+  font-weight: 800;
+  white-space: nowrap;
+}

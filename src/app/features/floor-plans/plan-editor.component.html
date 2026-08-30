@@ -109,30 +109,34 @@
                       </span>
                     </div>
 
-                    @if (canManageOrders) { <div class="quantity-editor">
-                      <ion-button
-                        size="small"
-                        class="qty-button"
-                        (click)="changeItemQuantity(item, -1)">
-                        −
-                      </ion-button>
+                    <div class="quantity-editor">
+                      @if (canManageOrders) {
+                        <ion-button
+                          size="small"
+                          class="qty-button"
+                          (click)="changeItemQuantity(item, -1)">
+                          −
+                        </ion-button>
+                      }
 
-                      <span>{{ item.quantity }}</span>
+                      <span class="order-item-quantity">x{{ item.quantity }}</span>
 
-                      <ion-button
-                        size="small"
-                        class="qty-button"
-                        (click)="changeItemQuantity(item, 1)">
-                        +
-                      </ion-button>
+                      @if (canManageOrders) {
+                        <ion-button
+                          size="small"
+                          class="qty-button"
+                          (click)="changeItemQuantity(item, 1)">
+                          +
+                        </ion-button>
 
-                      <ion-button
-                        size="small"
-                        class="remove-item"
-                        (click)="removeOrderItem(item)">
-                        ✕
-                      </ion-button>
-                    </div> }
+                        <ion-button
+                          size="small"
+                          class="remove-item"
+                          (click)="removeOrderItem(item)">
+                          ✕
+                        </ion-button>
+                      }
+                    </div>
 
                   </div>
                 }
@@ -156,30 +160,34 @@
                       </span>
                     </div>
 
-                    @if (canManageOrders) { <div class="quantity-editor">
-                      <ion-button
-                        size="small"
-                        class="qty-button"
-                        (click)="changeItemQuantity(item, -1)">
-                        −
-                      </ion-button>
+                    <div class="quantity-editor">
+                      @if (canManageOrders) {
+                        <ion-button
+                          size="small"
+                          class="qty-button"
+                          (click)="changeItemQuantity(item, -1)">
+                          −
+                        </ion-button>
+                      }
 
-                      <span>{{ item.quantity }}</span>
+                      <span class="order-item-quantity">x{{ item.quantity }}</span>
 
-                      <ion-button
-                        size="small"
-                        class="qty-button"
-                        (click)="changeItemQuantity(item, 1)">
-                        +
-                      </ion-button>
+                      @if (canManageOrders) {
+                        <ion-button
+                          size="small"
+                          class="qty-button"
+                          (click)="changeItemQuantity(item, 1)">
+                          +
+                        </ion-button>
 
-                      <ion-button
-                        size="small"
-                        class="remove-item"
-                        (click)="removeOrderItem(item)">
-                        ✕
-                      </ion-button>
-                    </div> }
+                        <ion-button
+                          size="small"
+                          class="remove-item"
+                          (click)="removeOrderItem(item)">
+                          ✕
+                        </ion-button>
+                      }
+                    </div>
 
                   </div>
                 }
@@ -203,30 +211,34 @@
                       </span>
                     </div>
 
-                    @if (canManageOrders) { <div class="quantity-editor">
-                      <ion-button
-                        size="small"
-                        class="qty-button"
-                        (click)="changeItemQuantity(item, -1)">
-                        −
-                      </ion-button>
+                    <div class="quantity-editor">
+                      @if (canManageOrders) {
+                        <ion-button
+                          size="small"
+                          class="qty-button"
+                          (click)="changeItemQuantity(item, -1)">
+                          −
+                        </ion-button>
+                      }
 
-                      <span>{{ item.quantity }}</span>
+                      <span class="order-item-quantity">x{{ item.quantity }}</span>
 
-                      <ion-button
-                        size="small"
-                        class="qty-button"
-                        (click)="changeItemQuantity(item, 1)">
-                        +
-                      </ion-button>
+                      @if (canManageOrders) {
+                        <ion-button
+                          size="small"
+                          class="qty-button"
+                          (click)="changeItemQuantity(item, 1)">
+                          +
+                        </ion-button>
 
-                      <ion-button
-                        size="small"
-                        class="remove-item"
-                        (click)="removeOrderItem(item)">
-                        ✕
-                      </ion-button>
-                    </div> }
+                        <ion-button
+                          size="small"
+                          class="remove-item"
+                          (click)="removeOrderItem(item)">
+                          ✕
+                        </ion-button>
+                      }
+                    </div>
 
                   </div>
                 }
