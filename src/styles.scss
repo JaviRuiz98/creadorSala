@@ -163,3 +163,45 @@ ion-modal.order-modal .current-order {
     width: 100%;
   }
 }
+
+/* =========================================================
+   DIALOGOS DE BORRADO / ALERTA - ALTURA AJUSTADA AL CONTENIDO
+   Los ion-modal se renderizan como overlays globales, por lo que
+   estas reglas deben vivir en styles.scss y no solo en el SCSS
+   encapsulado del componente.
+   ========================================================= */
+ion-modal.danger-plan-modal {
+  --width: min(480px, calc(100vw - 32px));
+  --height: auto;
+  --max-height: calc(100vh - 32px);
+  --border-radius: 22px;
+  --backdrop-opacity: .48;
+}
+
+ion-modal.danger-plan-modal::part(content) {
+  height: auto;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border-radius: 22px;
+}
+
+ion-modal.danger-plan-modal .plan-dialog {
+  height: auto;
+  min-height: 0;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+@media (max-width: 600px) {
+  ion-modal.danger-plan-modal {
+    --width: calc(100vw - 20px);
+    --max-height: calc(100vh - 20px);
+    --border-radius: 18px;
+  }
+
+  ion-modal.danger-plan-modal::part(content),
+  ion-modal.danger-plan-modal .plan-dialog {
+    max-height: calc(100vh - 20px);
+    border-radius: 18px;
+  }
+}

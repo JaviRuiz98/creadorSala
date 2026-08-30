@@ -202,16 +202,16 @@
           @if (catalogDeleteBlocked()) {
             <h2>No se puede eliminar</h2>
             @if (categoryToDelete()) {
-              <p>Esta categoría contiene productos asignados a alguna mesa o reservado. Eliminarla podría afectar a la base de datos.</p>
+              <p>Esta categoría contiene al menos un producto con pedidos pendientes o servidos. No se puede eliminar mientras exista ese uso.</p>
             } @else {
-              <p>Este producto ha sido asignado a alguna mesa o reservado. Eliminarlo podría afectar a la base de datos.</p>
+              <p>Este producto tiene pedidos pendientes o servidos. No se puede eliminar mientras exista ese uso.</p>
             }
           } @else {
             <h2>¿Confirmar eliminación?</h2>
             @if (categoryToDelete()) {
-              <p>Se eliminará la categoría <strong>{{ categoryToDelete()?.name }}</strong> y todos sus productos. Esta acción no se puede deshacer.</p>
+              <p>Se eliminará la categoría <strong>{{ categoryToDelete()?.name }}</strong>, todos sus productos y cualquier línea cancelada asociada. Esta acción no se puede deshacer.</p>
             } @else {
-              <p>Se eliminará el producto <strong>{{ productToDelete()?.name }}</strong>. Esta acción no se puede deshacer.</p>
+              <p>Se eliminará el producto <strong>{{ productToDelete()?.name }}</strong> y cualquier línea cancelada asociada. Esta acción no se puede deshacer.</p>
             }
           }
           @if (catalogDeleteError()) { <p class="form-error">{{ catalogDeleteError() }}</p> }
