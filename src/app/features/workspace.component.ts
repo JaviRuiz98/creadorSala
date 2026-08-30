@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,7 +12,6 @@ import {
   IonSegmentButton,
   IonLabel,
   IonToast,
-  IonBadge,
   IonInput,
   IonSelect,
   IonSelectOption,
@@ -61,8 +60,7 @@ import { TableProductPanelComponent } from './floor-plans/table-product-panel.co
     IonSegmentButton,
     IonLabel,
     IonToast,
-    IonBadge,
-    IonInput,
+      IonInput,
     IonSelect,
     IonSelectOption,
     IonModal,
@@ -74,6 +72,7 @@ import { TableProductPanelComponent } from './floor-plans/table-product-panel.co
   styleUrl: './workspace.component.scss',
 })
 export class WorkspaceComponent implements OnInit, OnDestroy {
+  @ViewChild(PlanEditorComponent) private planEditor?: PlanEditorComponent;
   activeTab = signal<'planos' | 'operativo' | 'productos'>('planos');
   editorMode = signal<'editor' | 'operativo'>('editor');
   plans = signal<FloorPlan[]>([]);
@@ -262,9 +261,21 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     return;
   }
 
-  toggleEditorMode(): void {
+  async toggleEditorMode(): Promise<void> {
     if (!this.isAdmin) return;
-    this.editorMode.set(this.editorMode() === 'editor' ? 'operativo' : 'editor');
+
+    if (this.editorMode() === 'editor') {
+      // Al salir del editor persistimos el diseño antes de mostrar el plano operativo.
+      const saved = await this.planEditor?.saveDesign(false);
+      if (saved === false) {
+        this.toast.set('No se pudo guardar el diseño. Continúas en modo edición.');
+        return;
+      }
+      this.editorMode.set('operativo');
+      return;
+    }
+
+    this.editorMode.set('editor');
   }
   openCreatePlanDialog(): void {
     this.newPlanName = '';

@@ -51,6 +51,25 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
     return this.auth.hasRole('ADMIN');
   }
 
+
+  get pendingTargets(): ListedTarget[] {
+    return this.listedTargets
+      .filter((target) => target.items.length > 0 && !target.attended)
+      .sort((a, b) => a.type === b.type ? a.number - b.number : a.type === 'TABLE' ? -1 : 1);
+  }
+
+  get attendedTables(): ListedTarget[] {
+    return this.listedTargets
+      .filter((target) => target.type === 'TABLE' && !this.pendingTargets.some((pending) => pending.id === target.id))
+      .sort((a, b) => a.number - b.number);
+  }
+
+  get attendedReserved(): ListedTarget[] {
+    return this.listedTargets
+      .filter((target) => target.type === 'RESERVED' && !this.pendingTargets.some((pending) => pending.id === target.id))
+      .sort((a, b) => a.number - b.number);
+  }
+
   get selectedItemCount(): number {
     return Object.values({ ...this.alcoholQuantities, ...this.softDrinkQuantities }).reduce((sum, quantity) => sum + (quantity || 0), 0);
   }

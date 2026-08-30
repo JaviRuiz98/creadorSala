@@ -38,3 +38,10 @@
     .dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:15px 24px 20px; border-top:1px solid #eee5df; }
     .dialog-error { margin-right:auto; color:#b53b3b; font-size:12px; }
     @media(max-width:850px) { :host { min-width:280px; } .panel-header { padding:12px; } .dialog-header,.dialog-body,.dialog-actions { padding-left:16px; padding-right:16px; } }
+
+    .target-group { display:flex; flex-direction:column; gap:10px; }
+    .target-group + .target-group { margin-top:8px; padding-top:12px; border-top:1px solid #eadfd8; }
+    .group-title { margin:0 2px 2px; color:#65412e; font-size:14px; font-weight:900; letter-spacing:.02em; }
+    .urgent-title { color:#b22f39; letter-spacing:.1em; font-size:11px; }
+    .urgent-group { padding-bottom:2px; }
+    .group-empty { padding:8px 3px; }

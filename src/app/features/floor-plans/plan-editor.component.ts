@@ -1156,8 +1156,8 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.render();
     this.setTool('select');
   }
-  async saveDesign() {
-    if (!this.isAdmin) return;
+  async saveDesign(showConfirmation = true): Promise<boolean> {
+    if (!this.isAdmin) return false;
     try {
       if (this.drawing.length >= 2) {
         this.convertDrawing();
@@ -1167,9 +1167,11 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
         tables: this.tables,
         reserved: this.reserved,
       });
-      this.showSaveDialog = true;
+      if (showConfirmation) this.showSaveDialog = true;
+      return true;
     } catch (e) {
       console.error('Error guardando diseño:', e);
+      return false;
     }
   }
   closeSaveDialog() {

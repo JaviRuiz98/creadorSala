@@ -25,12 +25,7 @@
         <ion-segment-button value="planos"><ion-label>Planos</ion-label></ion-segment-button>
       }
       <ion-segment-button value="operativo">
-        <ion-label
-          >Operativa
-          @if (pendingCount() > 0) {
-            <ion-badge color="danger">{{ pendingCount() }}</ion-badge>
-          }
-        </ion-label>
+        <ion-label>Operativa</ion-label>
       </ion-segment-button>
       @if (isAdmin) {
         <ion-segment-button value="productos"><ion-label>Productos</ion-label></ion-segment-button>
@@ -104,7 +99,7 @@
           </ion-select>
           @if (isAdmin) {
             <ion-button fill="outline" class="secondary-button" (click)="toggleEditorMode()">{{
-              editorMode() === 'editor' ? 'Ver operativo' : 'Editar plano'
+              editorMode() === 'editor' ? 'Ver plano' : 'Editar plano'
             }}</ion-button>
           }
         </div>
