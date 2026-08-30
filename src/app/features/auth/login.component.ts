@@ -79,9 +79,9 @@ import { AuthService } from '../../core/auth/auth.service';
   styles: [`
     .login-page { --background: transparent; }
     .login-layout { min-height: 100%; display: grid; place-items: center; padding: 28px 18px; background: radial-gradient(circle at 15% 15%, rgba(113,70,48,.14), transparent 34%), linear-gradient(135deg, #f8f4f0 0%, #fff 52%, #f2ece7 100%); }
-    .login-card { width: min(920px, 100%); min-height: 570px; display: grid; grid-template-columns: 40% 60%; overflow: hidden; border: 1px solid #e8ded7; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(70,43,29,.15); }
-    .brand { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px; color: #fff; text-align: center; background: #563522; }
-    .brand-mark { width: min(310px, 100%); padding: 28px 14px; border: 1px solid rgba(255,255,255,.25); font-weight: 900; font-size: clamp(20px, 3vw, 34px); line-height: 1; letter-spacing: .035em; white-space: nowrap; } .brand-mark span,.brand-mark strong{font:inherit;font-weight:900}
+    .login-card { width: min(920px, 100%); min-height: 570px; display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 60%); overflow: hidden; border: 1px solid #e8ded7; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(70,43,29,.15); box-sizing: border-box; }
+    .brand { min-width: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px 28px; color: #fff; text-align: center; background: #563522; overflow: hidden; }
+    .brand-mark { display: inline-flex; align-items: baseline; justify-content: center; gap: .22em; width: auto; max-width: 100%; padding: 28px 14px; box-sizing: border-box; border: 1px solid rgba(255,255,255,.25); font-weight: 900; font-size: clamp(20px, 2.35vw, 32px); line-height: 1; letter-spacing: .025em; white-space: nowrap; } .brand-mark span,.brand-mark strong{font:inherit;font-weight:900;white-space:nowrap}
     .brand p { margin: 22px 0 0; color: #eadbd0; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; }
     .login-content { display: flex; flex-direction: column; justify-content: center; padding: clamp(32px, 6vw, 70px); }
     .heading { margin-bottom: 30px; }
@@ -94,7 +94,7 @@ import { AuthService } from '../../core/auth/auth.service';
     .error-message { display: block; padding: 11px 13px; border-radius: 10px; background: #fff1f0; }
     .error-message p { margin: 0; font-size: 13px; }
     .security-note { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 26px; color: #8b7d75; font-size: 12px; }
-    @media (max-width: 680px) { .login-card { grid-template-columns: 1fr; min-height: auto; border-radius: 22px; } .brand { padding: 30px 20px; } .brand-mark { font-size: clamp(19px, 7vw, 27px); padding: 18px 10px; } .brand p { margin-top: 12px; } .login-content { padding: 30px 22px 34px; } h1 { font-size: 30px; } }
+    @media (max-width: 900px) { .login-layout { padding: 18px 14px; } .login-card { grid-template-columns: 1fr; min-height: auto; max-width: 620px; border-radius: 22px; } .brand { padding: 30px 20px; } .brand-mark { font-size: clamp(19px, 5.8vw, 30px); padding: 18px 12px; } .brand p { margin-top: 12px; } .login-content { padding: 30px 22px 34px; } h1 { font-size: 30px; } } @media (max-width: 420px) { .login-layout { padding: 10px; } .brand { padding: 24px 12px; } .brand-mark { gap: .16em; font-size: clamp(18px, 6.7vw, 25px); letter-spacing: .01em; padding: 16px 8px; } .login-content { padding: 26px 18px 30px; } }
   `]
 })
 export class LoginComponent {
