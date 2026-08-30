@@ -43,6 +43,8 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   @ViewChild('container', { static: true })
   container!: ElementRef<HTMLDivElement>;
   private stage!: Konva.Stage;
+  private resizeObserver: ResizeObserver | null = null;
+  private resizeFrame: number | null = null;
   private layer!: Konva.Layer;
   private draftLayer!: Konva.Layer;
   private drawingShape: Konva.Line | null = null;
@@ -265,12 +267,38 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.draftLayer = new Konva.Layer();
     this.stage.add(this.layer);
     this.stage.add(this.draftLayer);
+    this.observeStageSize(el);
     this.stage.on('wheel', (e) => {
       e.evt.preventDefault();
       this.zoomAtPointer(e.evt as WheelEvent, e.evt.deltaY < 0 ? 0.1 : -0.1);
     });
     this.render();
   }
+  private observeStageSize(el: HTMLDivElement) {
+    this.resizeObserver?.disconnect();
+    if (this.resizeFrame !== null) {
+      cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = null;
+    }
+
+    const resizeStage = () => {
+      if (!this.stage) return;
+      if (this.resizeFrame !== null) cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = requestAnimationFrame(() => {
+        this.resizeFrame = null;
+        const nextWidth = Math.max(el.clientWidth, 1);
+        const nextHeight = Math.max(el.clientHeight, 500);
+        if (this.stage.width() === nextWidth && this.stage.height() === nextHeight) return;
+        this.stage.size({ width: nextWidth, height: nextHeight });
+        this.stage.batchDraw();
+      });
+    };
+
+    this.resizeObserver = new ResizeObserver(resizeStage);
+    this.resizeObserver.observe(el);
+    resizeStage();
+  }
+
   private render() {
     if (!this.layer) {
       return;
@@ -944,6 +972,12 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.selectedOrderTarget = null;
     if (this.realtimeChannel) {
       this.realtimeChannel.unsubscribe();
+    }
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    if (this.resizeFrame !== null) {
+      cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = null;
     }
     if (this.stage) {
       this.stage.destroy();
