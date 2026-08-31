@@ -1267,3 +1267,35 @@
     grid-column:1;
   }
 }
+
+/* Feedback inmediato al confirmar una mesa/reservado como atendida */
+.attendance-loading{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.attendance-spinner{
+  width:15px;
+  height:15px;
+  border:2px solid rgba(255,255,255,.45);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:attendance-spin .65s linear infinite;
+}
+.attendance-error{
+  margin:2px 20px 4px;
+  padding:8px 10px;
+  border-radius:9px;
+  background:#fff0ee;
+  color:#9f2d24;
+  font-size:12px;
+  font-weight:750;
+  text-align:center;
+}
+@keyframes attendance-spin{
+  to{transform:rotate(360deg)}
+}
+@media (prefers-reduced-motion: reduce){
+  .attendance-spinner{animation-duration:1.4s}
+}

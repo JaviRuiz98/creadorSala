@@ -82,6 +82,8 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   orderItems: WritableSignal<Array<any>> = signal([]);
   orderCountMap = new Map<string, number>();
   selectedPending = 0;
+  attendanceSaving = false;
+  attendanceError = '';
 
   get currentOrderItems(): Array<any> {
     return this.orderItems().filter((item: any) => item.status === 'PENDING' && item.attended !== true);
@@ -755,6 +757,8 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.render();
   }
   closeOrderDialog() {
+    this.attendanceSaving = false;
+    this.attendanceError = '';
     this.showOrderDialog = false;
     this.selectedOrderTarget = null;
     this.selectedProductId = '';
@@ -792,32 +796,55 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
 
   async markAttended(attended: boolean) {
     const target = this.selectedOrderTarget;
-    if (!target) return;
+    if (!target || this.attendanceSaving) return;
     if (attended && !this.canSetAttendedStatus) {
       return;
     }
+
     const previous = target.attended;
+    const startedAt = Date.now();
+    this.attendanceSaving = true;
+    this.attendanceError = '';
+
+    // Feedback inmediato: el usuario ve que la pulsación se ha detectado
+    // antes de esperar la respuesta de Supabase.
+    this.cdr.detectChanges();
+
     // Actualiza el objeto local al instante (el objeto es el mismo que
     // vive dentro de this.tables / this.reserved, así que redibuja ya
     // en el color correcto).
     target.attended = attended;
     target.updated_at = new Date().toISOString();
     this.render();
+
     try {
       await this.floors.setTableAttended(target.id, attended);
       await this.loadOrdersForTarget(target);
       await this.refreshPendingMap();
       this.render();
 
-      // Cuando la consulta confirma que la mesa/reservado ha quedado atendida,
-      // cerramos el diálogo. Si se marca como no atendida, permanece abierto.
+      // El spinner debe llegar a percibirse incluso si la respuesta es
+      // prácticamente instantánea.
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < 300) {
+        await new Promise((resolve) => setTimeout(resolve, 300 - elapsed));
+      }
+
+      // Cuando el backend confirma que ha quedado atendida, cerramos.
       if (attended) {
+        this.attendanceSaving = false;
+        this.cdr.detectChanges();
         this.closeOrderDialog();
+        return;
       }
     } catch (error) {
       target.attended = previous;
       this.render();
+      this.attendanceError = 'No se pudo actualizar. Inténtalo de nuevo.';
       console.error('Error actualizando el estado de atención:', error);
+    } finally {
+      this.attendanceSaving = false;
+      this.cdr.detectChanges();
     }
   }
   private async loadOrdersForTarget(target?: ClubTable) {

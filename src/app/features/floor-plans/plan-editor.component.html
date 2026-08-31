@@ -251,19 +251,30 @@
           {{ selectedOrderTarget?.type === 'RESERVED' ? 'reservado' : 'mesa' }}?
         </div>
 
+        @if (attendanceError) {
+          <div class="attendance-error" role="alert">{{ attendanceError }}</div>
+        }
+
         <div class="dialog-actions attention-actions">
           <ion-button
             class="dialog-secondary"
-            [disabled]="!canSetAttendedStatus"
+            [disabled]="!canSetAttendedStatus || attendanceSaving"
             (click)="markAttended(false)">
             No ha sido atendida
           </ion-button>
 
           <ion-button
             class="dialog-button"
-            [disabled]="!canSetAttendedStatus"
+            [disabled]="!canSetAttendedStatus || attendanceSaving"
             (click)="markAttended(true)">
-            Sí, atendida
+            @if (attendanceSaving) {
+              <span class="attendance-loading" aria-live="polite">
+                <span class="attendance-spinner" aria-hidden="true"></span>
+                Procesando…
+              </span>
+            } @else {
+              Sí, atendida
+            }
           </ion-button>
         </div>
 
