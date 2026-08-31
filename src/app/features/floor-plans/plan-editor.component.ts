@@ -808,6 +808,12 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       await this.loadOrdersForTarget(target);
       await this.refreshPendingMap();
       this.render();
+
+      // Cuando la consulta confirma que la mesa/reservado ha quedado atendida,
+      // cerramos el diálogo. Si se marca como no atendida, permanece abierto.
+      if (attended) {
+        this.closeOrderDialog();
+      }
     } catch (error) {
       target.attended = previous;
       this.render();

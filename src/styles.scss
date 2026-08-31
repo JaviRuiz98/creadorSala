@@ -22,6 +22,35 @@ ion-segment { --background: #fff; }
 ion-item { --background: #fff; --border-color: #eee4de; }
 
 /* =========================================================
+   INTERACCION TACTIL - SIN DESTELLO/AZUL DE NAVEGADOR
+   Mantiene el mismo aspecto visual al tocar que al hacer clic
+   con ratón. Ionic sigue procesando el click normalmente.
+   ========================================================= */
+button,
+ion-button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+ion-button {
+  --ripple-color: transparent;
+}
+
+ion-button::part(native) {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+ion-modal.order-modal .dialog-button {
+  --background-activated: #6b4430;
+  --background-focused: #6b4430;
+}
+
+ion-modal.order-modal .dialog-secondary {
+  --background-activated: #f4e7de;
+  --background-focused: #f4e7de;
+}
+
+/* =========================================================
    MODAL DE PEDIDOS - OVERLAY GLOBAL / RESPONSIVE
    Ionic renderiza los overlays fuera del árbol encapsulado del
    componente, por lo que estas reglas deben ser globales.
