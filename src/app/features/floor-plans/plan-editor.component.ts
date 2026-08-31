@@ -769,9 +769,11 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     try {
       await this.floors.setTableObservation(target.id, normalized || null);
       target.observation = normalized || null;
+      target.attended = false;
       target.updated_at = new Date().toISOString();
       this.observationDraft = target.observation ?? '';
-      this.observationMessage = 'Observación guardada';
+      this.observationMessage = 'Observación guardada · mesa pendiente';
+      this.render();
     } catch (error) {
       console.error('Error guardando observación:', error);
       this.observationMessage = 'No se pudo guardar la observación';
