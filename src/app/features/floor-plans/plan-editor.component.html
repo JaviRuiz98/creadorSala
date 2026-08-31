@@ -201,36 +201,42 @@
               @for (group of productGroupsForOrdering; track group.id) {
                 <section class="category-order-card">
                   <div class="category-order-title">{{ group.name }}</div>
-                  <input
-                    class="category-search-input"
-                    type="search"
-                    [(ngModel)]="categoryProductSearch[group.id]"
-                    placeholder="Buscar en {{ group.name }}..."
-                    [attr.aria-label]="'Buscar productos en ' + group.name">
-                  <select
-                    class="category-product-select"
-                    [(ngModel)]="categoryProductSelection[group.id]"
-                    [attr.aria-label]="'Producto de ' + group.name">
-                    <option value="">Selecciona un producto</option>
-                    @for (product of filteredProductsForCategory(group); track product.id) {
-                      <option [value]="product.id">{{ product.name }}</option>
-                    }
-                  </select>
-                  <div class="category-add-row">
-                    <label class="category-quantity-label">
-                      <span>Cantidad</span>
+
+                  <div class="category-order-controls-scroll">
+                    <div class="category-order-controls">
                       <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        [(ngModel)]="categoryProductQuantity[group.id]">
-                    </label>
-                    <ion-button
-                      class="editor-button primary category-add-button"
-                      [disabled]="!categoryProductSelection[group.id]"
-                      (click)="addProductFromCategory(group.id)">
-                      + Añadir
-                    </ion-button>
+                        class="category-search-input"
+                        type="search"
+                        [(ngModel)]="categoryProductSearch[group.id]"
+                        placeholder="Buscar en {{ group.name }}..."
+                        [attr.aria-label]="'Buscar productos en ' + group.name">
+
+                      <select
+                        class="category-product-select"
+                        [(ngModel)]="categoryProductSelection[group.id]"
+                        [attr.aria-label]="'Producto de ' + group.name">
+                        <option value="">Selecciona un producto</option>
+                        @for (product of filteredProductsForCategory(group); track product.id) {
+                          <option [value]="product.id">{{ product.name }}</option>
+                        }
+                      </select>
+
+                      <label class="category-quantity-label">
+                        <span>Cantidad</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          [(ngModel)]="categoryProductQuantity[group.id]">
+                      </label>
+
+                      <ion-button
+                        class="editor-button primary category-add-button"
+                        [disabled]="!categoryProductSelection[group.id]"
+                        (click)="addProductFromCategory(group.id)">
+                        + Añadir
+                      </ion-button>
+                    </div>
                   </div>
                 </section>
               } @empty {
@@ -248,14 +254,14 @@
         <div class="dialog-actions attention-actions">
           <ion-button
             class="dialog-secondary"
-            [disabled]="currentOrderItems.length === 0"
+            [disabled]="!canSetAttendedStatus"
             (click)="markAttended(false)">
             No ha sido atendida
           </ion-button>
 
           <ion-button
             class="dialog-button"
-            [disabled]="currentOrderItems.length === 0"
+            [disabled]="!canSetAttendedStatus"
             (click)="markAttended(true)">
             Sí, atendida
           </ion-button>

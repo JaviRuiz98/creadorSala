@@ -1060,28 +1060,54 @@
 .category-order-grid{
   display:grid;
   grid-template-columns:1fr;
-  gap:12px;
+  gap:14px;
   margin-top:10px;
 }
+
 .category-order-card{
   border:1px solid #ded3cb;
   border-radius:14px;
   padding:13px;
   background:#fffdfa;
-  display:grid;
-  grid-template-columns:minmax(120px,170px) minmax(180px,1fr) minmax(210px,1.2fr) minmax(90px,110px) minmax(130px,160px);
-  align-items:end;
-  gap:10px;
+  min-width:0;
 }
-.category-order-title{align-self:center;}
+
+/* El nombre ocupa siempre su propia línea. */
 .category-order-title{
+  display:block;
+  width:100%;
+  margin:0 0 10px;
+  padding:0 2px 8px;
+  border-bottom:1px solid #eee4dd;
   font-size:13px;
   font-weight:900;
   color:#5c493f;
-  letter-spacing:.04em;
+  letter-spacing:.05em;
   text-transform:uppercase;
 }
-.category-search-input,.category-product-select,.category-quantity-label input{
+
+/* Si la segunda fila no cabe, solo esta zona desplaza horizontalmente. */
+.category-order-controls-scroll{
+  width:100%;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding-bottom:4px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+
+.category-order-controls{
+  display:grid;
+  grid-template-columns:minmax(190px,1fr) minmax(230px,1.25fr) 95px 132px;
+  align-items:end;
+  gap:10px;
+  min-width:680px;
+}
+
+.category-search-input,
+.category-product-select,
+.category-quantity-label input{
   width:100%;
   box-sizing:border-box;
   min-height:42px;
@@ -1093,24 +1119,41 @@
   padding:9px 11px;
   outline:none;
 }
-.category-search-input:focus,.category-product-select:focus,.category-quantity-label input:focus{
+
+.category-search-input:focus,
+.category-product-select:focus,
+.category-quantity-label input:focus{
   border-color:#79503a;
   box-shadow:0 0 0 2px rgba(121,80,58,.1);
 }
-.category-add-row{
-  display:contents;
+
+.category-quantity-label{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  color:#6a5b52;
+  font-size:11px;
+  font-weight:800;
 }
-.category-quantity-label{display:flex;flex-direction:column;gap:4px;color:#6a5b52;font-size:11px;font-weight:800;}
-.category-add-button{margin:0;min-height:42px;}
-@media(max-width:900px){
-  .category-order-card{grid-template-columns:1fr;}
-  .category-order-title{align-self:auto;}
-  .category-add-row{display:grid;grid-template-columns:105px 1fr;gap:9px;}
+
+.category-add-button{
+  margin:0;
+  min-height:42px;
+  white-space:nowrap;
+}
+
+@media(max-width:640px){
+  .category-order-card{padding:11px;}
+  .category-order-controls{
+    grid-template-columns:180px 220px 82px 120px;
+    min-width:638px;
+    gap:8px;
+  }
 }
 
 /* Pedido atendido: bloque visual independiente y más legible */
 .attended-order{
-  margin:18px 16px 22px;
+  margin:18px 16px 34px;
   padding:14px;
   border:1px solid #d8d0ca;
   border-radius:16px;
@@ -1145,4 +1188,4 @@
   padding:10px 12px;
 }
 .attended-order .served-order-item:last-child{border-bottom:0;}
-@media(max-width:640px){.attended-order{margin:14px 12px 20px;padding:11px;}}
+@media(max-width:640px){.attended-order{margin:14px 12px 30px;padding:11px;}}

@@ -99,6 +99,13 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     return this.groupOrderItemsByCategory(this.attendedOrderItems);
   }
 
+  get canSetAttendedStatus(): boolean {
+    if (this.currentOrderItems.length > 0) return true;
+
+    const hasObservation = Boolean((this.selectedOrderTarget?.observation ?? '').trim());
+    return this.attendedOrderItems.length > 0 && hasObservation;
+  }
+
   get activeProducts(): Product[] {
     return this.products.filter((product) => product.active !== false);
   }
@@ -786,8 +793,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   async markAttended(attended: boolean) {
     const target = this.selectedOrderTarget;
     if (!target) return;
-    if (attended && this.currentOrderItems.length === 0) {
-      // No se puede marcar como atendida una mesa/reservado sin productos.
+    if (attended && !this.canSetAttendedStatus) {
       return;
     }
     const previous = target.attended;
