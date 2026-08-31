@@ -1189,3 +1189,81 @@
 }
 .attended-order .served-order-item:last-child{border-bottom:0;}
 @media(max-width:640px){.attended-order{margin:14px 12px 30px;padding:11px;}}
+
+/* =========================================================
+   AJUSTE DEFINITIVO: ALTA POR CATEGORÍA RESPONSIVE
+   ========================================================= */
+.category-order-controls-scroll{
+  overflow:visible;
+  padding-bottom:0;
+}
+
+.category-order-controls{
+  width:100%;
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) 88px 118px;
+  align-items:end;
+  gap:10px;
+}
+
+.category-order-controls > *{
+  min-width:0;
+}
+
+.category-search-input,
+.category-product-select,
+.category-quantity-label input{
+  max-width:100%;
+}
+
+.category-add-button{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+
+.category-add-button::part(native){
+  width:100%;
+  min-width:0;
+  padding-inline:10px;
+  white-space:nowrap;
+}
+
+/* En anchos medios repartimos los controles en dos filas reales. */
+@media (max-width:760px){
+  .category-order-controls{
+    grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+    gap:10px;
+  }
+
+  .category-quantity-label{
+    grid-column:1;
+  }
+
+  .category-add-button{
+    grid-column:2;
+    align-self:end;
+  }
+}
+
+/* En móvil cada control ocupa todo el ancho: nunca se corta. */
+@media (max-width:520px){
+  .category-order-card{
+    padding:12px;
+  }
+
+  .category-order-title{
+    margin-bottom:12px;
+  }
+
+  .category-order-controls{
+    grid-template-columns:1fr;
+    gap:9px;
+  }
+
+  .category-quantity-label,
+  .category-add-button{
+    grid-column:1;
+  }
+}
