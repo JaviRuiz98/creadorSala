@@ -52,3 +52,19 @@ GitHub Pages queda preparado para el repositorio `creadorSala` mediante `.github
 
 ### Responsive order modal
 The order detail overlay is styled globally in `src/styles.scss` because Ionic renders modal overlays outside Angular component style encapsulation. On phones it opens full-screen with internal vertical scrolling and safe-area support.
+
+## App nativa (Capacitor)
+
+El repositorio está preparado para empaquetar la misma aplicación como Android/iOS con Capacitor. Consulta `NATIVE_APP.md` para los pasos completos.
+
+Comandos principales:
+
+```bash
+npm install
+npm run android:add   # una sola vez
+npm run ios:add       # una sola vez, en macOS
+npm run native:assets
+npm run native:build
+npm run android:open
+npm run ios:open
+```

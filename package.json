@@ -10,7 +10,17 @@
     "e2e": "playwright test",
     "format": "prettier --write .",
     "prebuild": "node scripts/generate-env.mjs",
-    "prestart": "node scripts/generate-env.mjs"
+    "prestart": "node scripts/generate-env.mjs",
+    "native:build": "npm run build && npx cap sync",
+    "native:sync": "npx cap sync",
+    "native:copy": "npm run build && npx cap copy",
+    "android:add": "npx cap add android",
+    "android:open": "npm run native:build && npx cap open android",
+    "android:run": "npm run native:build && npx cap run android",
+    "ios:add": "npx cap add ios",
+    "ios:open": "npm run native:build && npx cap open ios",
+    "ios:run": "npm run native:build && npx cap run ios",
+    "native:assets": "npx capacitor-assets generate --iconBackgroundColor '#563522' --iconBackgroundColorDark '#101114' --splashBackgroundColor '#563522' --splashBackgroundColorDark '#101114'"
   },
   "dependencies": {
     "@angular/animations": "^20.3.28",
@@ -27,7 +37,8 @@
     "konva": "^10.3.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.8.1",
-    "zone.js": "~0.15.1"
+    "zone.js": "~0.15.1",
+    "@capacitor/core": "^8.5.0"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^20.3.28",
@@ -41,6 +52,10 @@
     "typescript": "~5.9.2",
     "vitest": "^3.2.4",
     "typescript-eslint": "^8.40.0",
-    "@eslint/js": "^9.33.0"
+    "@eslint/js": "^9.33.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/assets": "^3.0.5"
   }
 }
