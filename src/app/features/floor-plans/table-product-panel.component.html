@@ -26,7 +26,7 @@
                     <span class="status-dot red"></span>
                   </div>
                   <div class="item-list">
-                    @for (item of target.items; track item.id) {
+                    @for (item of currentItems(target); track item.id) {
                       <div class="assigned-item"><span>{{ item.product.name }}</span><strong>x{{ item.quantity }}</strong></div>
                     }
                   </div>
@@ -43,13 +43,13 @@
                   <div><span class="kind">MESA</span><strong>{{ target.displayName }}</strong></div>
                   @if (target.items.length > 0 && target.attended) { <span class="status-dot green"></span> }
                 </div>
-                @if (target.items.length > 0) {
+                @if (attendedItems(target).length > 0) {
                   <div class="item-list">
-                    @for (item of target.items; track item.id) {
+                    @for (item of attendedItems(target); track item.id) {
                       <div class="assigned-item"><span>{{ item.product.name }}</span><strong>x{{ item.quantity }}</strong></div>
                     }
                   </div>
-                } @else { <div class="no-items">Sin productos asignados</div> }
+                } @else { <div class="no-items">Sin productos atendidos</div> }
               </article>
             } @empty { <div class="no-items group-empty">No hay mesas.</div> }
           </section>
@@ -62,13 +62,13 @@
                   <div><span class="kind">RESERVADO</span><strong>{{ target.displayName }}</strong></div>
                   @if (target.items.length > 0 && target.attended) { <span class="status-dot green"></span> }
                 </div>
-                @if (target.items.length > 0) {
+                @if (attendedItems(target).length > 0) {
                   <div class="item-list">
-                    @for (item of target.items; track item.id) {
+                    @for (item of attendedItems(target); track item.id) {
                       <div class="assigned-item"><span>{{ item.product.name }}</span><strong>x{{ item.quantity }}</strong></div>
                     }
                   </div>
-                } @else { <div class="no-items">Sin productos asignados</div> }
+                } @else { <div class="no-items">Sin productos atendidos</div> }
               </article>
             } @empty { <div class="no-items group-empty">No hay reservados.</div> }
           </section>
@@ -82,7 +82,7 @@
           <header class="dialog-header">
             <div>
               <span class="eyebrow">ASIGNAR PRODUCTOS</span>
-              <h2>Alcohol y refrescos</h2>
+              <h2>Añadir productos</h2>
               <p>Selecciona una mesa o reservado y prepara su pedido.</p>
             </div>
             <button type="button" class="close-button" (click)="closeDialog()">×</button>
@@ -97,37 +97,23 @@
             </ion-select>
 
             @if (selectedTargetId) {
-              <section class="product-section">
-                <h3>Alcohol</h3>
-                @for (product of alcoholProducts; track product.id) {
-                  <div class="product-line">
-                    <span>{{ product.name }}</span>
-                    <div class="quantity-control">
-                      <button type="button" (click)="changeQuantity(alcoholQuantities, product.id, -1)">−</button>
-                      <strong>{{ alcoholQuantities[product.id] || 0 }}</strong>
-                      <button type="button" (click)="changeQuantity(alcoholQuantities, product.id, 1)">+</button>
+              @for (group of productGroups; track group.id) {
+                <section class="product-section">
+                  <h3>{{ group.name }}</h3>
+                  @for (product of group.products; track product.id) {
+                    <div class="product-line">
+                      <span>{{ product.name }}</span>
+                      <div class="quantity-control">
+                        <button type="button" (click)="changeQuantity(productQuantities, product.id, -1)">−</button>
+                        <strong>{{ productQuantities[product.id] || 0 }}</strong>
+                        <button type="button" (click)="changeQuantity(productQuantities, product.id, 1)">+</button>
+                      </div>
                     </div>
-                  </div>
-                } @empty {
-                  <p class="empty-products">No hay productos de alcohol en el inventario.</p>
-                }
-              </section>
-
-              <section class="product-section">
-                <h3>Refrescos</h3>
-                @for (product of softDrinkProducts; track product.id) {
-                  <div class="product-line">
-                    <span>{{ product.name }}</span>
-                    <div class="quantity-control">
-                      <button type="button" (click)="changeQuantity(softDrinkQuantities, product.id, -1)">−</button>
-                      <strong>{{ softDrinkQuantities[product.id] || 0 }}</strong>
-                      <button type="button" (click)="changeQuantity(softDrinkQuantities, product.id, 1)">+</button>
-                    </div>
-                  </div>
-                } @empty {
-                  <p class="empty-products">No hay refrescos en el inventario.</p>
-                }
-              </section>
+                  }
+                </section>
+              } @empty {
+                <p class="empty-products">No hay productos activos en el catálogo.</p>
+              }
             }
           </div>
 

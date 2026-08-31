@@ -403,9 +403,9 @@
       <div class="alert-symbol">!</div>
       <div class="dialog-header alert-header">
         <div>
-          <span class="dialog-eyebrow">NUEVO PEDIDO</span>
-          <h2>HAY NUEVOS PEDIDOS</h2>
-          <p>Se han recibido nuevos pedidos. Pulsa Continuar para cerrar este aviso.</p>
+          <span class="dialog-eyebrow">{{ userAlertEyebrow() }}</span>
+          <h2>{{ userAlertTitle() }}</h2>
+          <p>{{ userAlertMessage() }}</p>
         </div>
       </div>
       <div class="dialog-actions">

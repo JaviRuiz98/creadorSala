@@ -107,6 +107,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   deletePlanDialog = signal(false);
   planToDelete = signal<FloorPlan | null>(null);
   newOrderAlert = signal(false);
+  userAlertTitle = signal('HAY NUEVOS PEDIDOS');
+  userAlertEyebrow = signal('NUEVO PEDIDO');
+  userAlertMessage = signal('Se han recibido nuevos pedidos. Pulsa Continuar para cerrar este aviso.');
 
   editCategoryDialog = signal(false);
   categoryToEdit = signal<ProductCategory | null>(null);
@@ -137,6 +140,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.renamePlanDialog.set(false);
     this.deletePlanDialog.set(false);
     this.newOrderAlert.set(false);
+    this.userAlertTitle.set('HAY NUEVOS PEDIDOS');
+    this.userAlertEyebrow.set('NUEVO PEDIDO');
+    this.userAlertMessage.set('Se han recibido nuevos pedidos. Pulsa Continuar para cerrar este aviso.');
     this.editCategoryDialog.set(false);
     this.editProductDialog.set(false);
     this.catalogDeleteDialog.set(false);
@@ -238,10 +244,22 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         this.activeTab.set('operativo');
         this.editorMode.set('operativo');
         if (this.plans().length) this.selectedPlan.set(this.plans()[0]);
-        this.userOrderChannel = this.notifications.subscribeToNewOrderItems(() => {
-          this.newOrderAlert.set(true);
-          void this.refreshOperationalData();
-        });
+        this.userOrderChannel = this.notifications.subscribeToNewOrderItems(
+          () => {
+            this.userAlertEyebrow.set('NUEVO PEDIDO');
+            this.userAlertTitle.set('HAY NUEVOS PEDIDOS');
+            this.userAlertMessage.set('Se han recibido nuevos pedidos. Pulsa Continuar para cerrar este aviso.');
+            this.newOrderAlert.set(true);
+            void this.refreshOperationalData();
+          },
+          () => {
+            this.userAlertEyebrow.set('OBSERVACIÓN');
+            this.userAlertTitle.set('HAY UNA NUEVA OBSERVACIÓN');
+            this.userAlertMessage.set('Se ha actualizado la observación de una mesa o reservado. Pulsa Continuar para revisarla.');
+            this.newOrderAlert.set(true);
+            void this.refreshOperationalData();
+          },
+        );
       }
       this.channel = this.orders.subscribe(() => this.refreshOperationalData(), 'workspace-orders');
     } catch (error) {

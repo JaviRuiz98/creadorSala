@@ -7,13 +7,14 @@ import { FloorPlanService } from '../../core/services/floor-plan.service';
 import { ProductService } from '../../core/services/product.service';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/auth/auth.service';
-import type { ClubTable, FloorPlan, OrderItem, Product, ProductCategory } from '../../core/models/models';
+import type { ClubTable, FloorPlan, OrderItem, Product } from '../../core/models/models';
 
 type AssignmentTarget = ClubTable & { displayName: string; kindLabel: string };
 type ListedItem = OrderItem & { product: Product };
 type ListedTarget = AssignmentTarget & { items: ListedItem[] };
 
 type QuantityMap = Record<string, number>;
+type ProductGroup = { id: string; name: string; products: Product[] };
 
 @Component({
   selector: 'app-table-product-panel',
@@ -27,14 +28,12 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
 
   listedTargets: ListedTarget[] = [];
   availableTargets: AssignmentTarget[] = [];
-  alcoholProducts: Product[] = [];
-  softDrinkProducts: Product[] = [];
+  productGroups: ProductGroup[] = [];
   dialogOpen = false;
   loading = false;
   saving = false;
   selectedTargetId = '';
-  alcoholQuantities: QuantityMap = {};
-  softDrinkQuantities: QuantityMap = {};
+  productQuantities: QuantityMap = {};
   errorMessage = '';
   private realtimeChannel: any;
   private loadVersion = 0;
@@ -71,7 +70,7 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
   }
 
   get selectedItemCount(): number {
-    return Object.values({ ...this.alcoholQuantities, ...this.softDrinkQuantities }).reduce((sum, quantity) => sum + (quantity || 0), 0);
+    return Object.values(this.productQuantities).reduce((sum, quantity) => sum + (quantity || 0), 0);
   }
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
@@ -100,9 +99,20 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
         a.type === b.type ? a.number - b.number : a.type === 'TABLE' ? -1 : 1,
       );
 
-      const categoryById = new Map(categoryList.map((category) => [category.id, category]));
-      this.alcoholProducts = productList.filter((product) => this.isAlcohol(categoryById.get(product.category_id)));
-      this.softDrinkProducts = productList.filter((product) => this.isSoftDrink(categoryById.get(product.category_id)));
+      this.productGroups = categoryList
+        .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+        .map((category) => ({
+          id: category.id,
+          name: category.name,
+          products: productList.filter((product) => product.active !== false && product.category_id === category.id),
+        }))
+        .filter((group) => group.products.length > 0);
+
+      const knownCategoryIds = new Set(categoryList.map((category) => category.id));
+      const uncategorized = productList.filter((product) => product.active !== false && !knownCategoryIds.has(product.category_id));
+      if (uncategorized.length) {
+        this.productGroups.push({ id: 'uncategorized', name: 'Otros', products: uncategorized });
+      }
 
       const orderResults = await Promise.all(targets.map((table) => this.orders.forTable(table.id)));
       if (version !== this.loadVersion) return;
@@ -114,8 +124,8 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
         items: orderResults[index]?.items ?? [],
       }));
 
-      const assignedIds = new Set(this.listedTargets.filter((target) => target.items.length > 0).map((target) => target.id));
-      this.availableTargets = this.listedTargets.filter((target) => !assignedIds.has(target.id));
+      // Se puede añadir un nuevo pedido también a mesas/reservados con histórico atendido.
+      this.availableTargets = [...this.listedTargets];
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : 'No se pudo cargar la operativa';
     } finally {
@@ -130,8 +140,7 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
     if (!this.isAdmin) return;
     this.errorMessage = '';
     this.selectedTargetId = '';
-    this.alcoholQuantities = {};
-    this.softDrinkQuantities = {};
+    this.productQuantities = {};
     this.dialogOpen = true;
   }
 
@@ -157,9 +166,7 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
     this.saving = true;
     this.errorMessage = '';
     try {
-      const items = [...Object.entries(this.alcoholQuantities), ...Object.entries(this.softDrinkQuantities)].map(
-        ([product_id, quantity]) => ({ product_id, quantity }),
-      );
+      const items = Object.entries(this.productQuantities).map(([product_id, quantity]) => ({ product_id, quantity }));
 
       await this.orders.assignProducts(this.selectedTargetId, items);
       this.dialogOpen = false;
@@ -171,24 +178,18 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
     }
   }
 
+
+  currentItems(target: ListedTarget): ListedItem[] {
+    return target.items.filter((item) => item.status === 'PENDING' && item.attended !== true);
+  }
+
+  attendedItems(target: ListedTarget): ListedItem[] {
+    return target.items.filter((item) => item.status === 'PLACED' || item.attended === true);
+  }
+
   private subscribeRealtime(): void {
     this.realtimeChannel?.unsubscribe?.();
     this.realtimeChannel = this.orders.subscribe(() => void this.load(), `table-product-panel-${this.plan.id}`);
   }
 
-  private isAlcohol(category?: ProductCategory): boolean {
-    const name = category?.name?.toLowerCase() ?? '';
-    return name.includes('alcohol');
-  }
-
-  private isSoftDrink(category?: ProductCategory): boolean {
-    const name = category?.name?.toLowerCase() ?? '';
-    return (
-      name.includes('refresco') ||
-      name.includes('soft drink') ||
-      name.includes('softdrink') ||
-      name.includes('soda') ||
-      name.includes('mix')
-    );
-  }
 }

@@ -6,7 +6,7 @@ import { SupabaseService } from './supabase.service';
 export class OrderNotificationService {
   constructor(private readonly db: SupabaseService) {}
 
-  subscribeToNewOrderItems(onNewOrder: () => void): RealtimeChannel {
+  subscribeToNewOrderItems(onNewOrder: () => void, onObservationChange?: () => void): RealtimeChannel {
     return this.db.client
       .channel(`user-new-orders-${crypto.randomUUID()}`)
       .on(
@@ -20,6 +20,19 @@ export class OrderNotificationService {
           const next = payload.new as Record<string, unknown> | undefined;
           if (next?.['status'] === 'PENDING') {
             onNewOrder();
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'tables' },
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          if (!onObservationChange) return;
+          const previous = payload.old as Record<string, unknown> | undefined;
+          const next = payload.new as Record<string, unknown> | undefined;
+          if (!previous || !next) return;
+          if (previous['observation'] !== next['observation']) {
+            onObservationChange();
           }
         },
       )

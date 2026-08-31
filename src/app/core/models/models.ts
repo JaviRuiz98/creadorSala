@@ -35,6 +35,7 @@ export interface FloorPlanElement {
   rotation: number;
   points: number[] | null;
   label: string | null;
+  font_size: number | null;
   z_index: number;
   created_at: string;
   updated_at: string;
@@ -52,6 +53,7 @@ export interface ClubTable {
   rotation: number;
   shape: TableShape;
   attended: boolean;
+  observation: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -86,6 +88,7 @@ export interface OrderItem {
   product_id: string;
   quantity: number;
   status: OrderItemStatus;
+  attended: boolean;
   created_by: string;
   placed_by: string | null;
   placed_at: string | null;

@@ -20,12 +20,14 @@ export class PlanDuplicationService {
         id: crypto.randomUUID(),
         floor_plan_id: copy.id,
         attended: false,
+        observation: null,
       })),
       reserved: (source.reserved ?? []).map((table) => ({
         ...structuredClone(table),
         id: crypto.randomUUID(),
         floor_plan_id: copy.id,
         attended: false,
+        observation: null,
       })),
     };
     await this.floors.saveSnapshot(copy.id, clone);

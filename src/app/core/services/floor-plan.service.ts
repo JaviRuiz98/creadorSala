@@ -116,6 +116,7 @@ export class FloorPlanService {
         rotation: element.rotation,
         points: element.points,
         label: element.label,
+        font_size: element.font_size ?? 22,
         z_index: element.z_index,
       })),
 
@@ -165,14 +166,24 @@ export class FloorPlanService {
    * Se usa por Realtime para mantener sincronizado el color del canvas entre
    * dispositivos sin recargar toda la geometría del plano.
    */
-  async loadTableAttentionStates(planId: string): Promise<Array<Pick<ClubTable, 'id' | 'attended' | 'updated_at'>>> {
+  async loadTableAttentionStates(planId: string): Promise<Array<Pick<ClubTable, 'id' | 'attended' | 'observation' | 'updated_at'>>> {
     const { data, error } = await this.db.client
       .from('tables')
-      .select('id,attended,updated_at')
+      .select('id,attended,observation,updated_at')
       .eq('floor_plan_id', planId);
 
     if (error) throw error;
-    return (data ?? []) as Array<Pick<ClubTable, 'id' | 'attended' | 'updated_at'>>;
+    return (data ?? []) as Array<Pick<ClubTable, 'id' | 'attended' | 'observation' | 'updated_at'>>;
+  }
+
+
+  /** Guarda una observación operativa de una mesa/reservado. Solo ADMIN puede ejecutar la RPC. */
+  async setTableObservation(tableId: string, observation: string | null): Promise<void> {
+    const { error } = await this.db.client.rpc('set_table_observation', {
+      p_table_id: tableId,
+      p_observation: observation,
+    });
+    if (error) throw error;
   }
 
   async setLocked(planId: string, locked: boolean): Promise<void> {

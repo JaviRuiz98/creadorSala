@@ -74,53 +74,88 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   private textPosition: Point | null = null;
   selectedProductId = '';
   quantity = 1;
-  selectedAlcoholProductId = '';
-  alcoholQuantity = 1;
-  selectedSoftDrinkProductId = '';
-  softDrinkQuantity = 1;
+  categoryProductSelection: Record<string, string> = {};
+  categoryProductSearch: Record<string, string> = {};
+  categoryProductQuantity: Record<string, number> = {};
   products: Product[] = [];
   productCategories: Array<{ id: string; name: string }> = [];
   orderItems: WritableSignal<Array<any>> = signal([]);
   orderCountMap = new Map<string, number>();
   selectedPending = 0;
-  get alcoholItems(): Array<any> {
-    return this.orderItems().filter((i) => this.isAlcohol(i));
+
+  get currentOrderItems(): Array<any> {
+    return this.orderItems().filter((item: any) => item.status === 'PENDING' && item.attended !== true);
   }
-  get softDrinkItems(): Array<any> {
-    return this.orderItems().filter((i) => this.isSoftDrink(i));
+
+  get attendedOrderItems(): Array<any> {
+    return this.orderItems().filter((item: any) => item.status === 'PLACED' || item.attended === true);
   }
-  get otherOrderItems(): Array<any> {
-    return this.orderItems().filter((i) => !this.isAlcohol(i) && !this.isSoftDrink(i));
+
+  get currentOrderGroups(): Array<{ id: string; name: string; items: Array<any> }> {
+    return this.groupOrderItemsByCategory(this.currentOrderItems);
   }
-  get alcoholProducts(): Product[] {
-    return this.products.filter((p) => this.isAlcoholProduct(p));
+
+  get attendedOrderGroups(): Array<{ id: string; name: string; items: Array<any> }> {
+    return this.groupOrderItemsByCategory(this.attendedOrderItems);
   }
-  get softDrinkProducts(): Product[] {
-    return this.products.filter((p) => this.isSoftDrinkProduct(p));
+
+  get activeProducts(): Product[] {
+    return this.products.filter((product) => product.active !== false);
   }
-  private isAlcoholProduct(product: any): boolean {
-    const name = this.categoryName(product);
-    return name.includes('alcohol') || name.includes('alcoh');
+
+  productCategoryDisplayName(product: Product): string {
+    return this.productCategories.find((category) => category.id === product.category_id)?.name ?? 'Sin categoría';
   }
-  private isSoftDrinkProduct(product: any): boolean {
-    const name = this.categoryName(product);
-    return name.includes('refresco') || name.includes('bebida');
+
+  get productGroupsForOrdering(): Array<{ id: string; name: string; products: Product[] }> {
+    const active = this.activeProducts;
+    const groups = this.productCategories
+      .map((category) => ({
+        id: category.id,
+        name: category.name,
+        products: active.filter((product) => product.category_id === category.id),
+      }))
+      .filter((group) => group.products.length > 0);
+
+    const knownIds = new Set(this.productCategories.map((category) => category.id));
+    const uncategorized = active.filter((product) => !knownIds.has(product.category_id));
+    if (uncategorized.length) groups.push({ id: 'uncategorized', name: 'Otros', products: uncategorized });
+    return groups;
   }
-  private categoryName(product: any): string {
-    const category = this.productCategories.find((c) => c.id === product?.category_id);
-    return String(category?.name ?? product?.category?.name ?? '')
-      .trim()
-      .toLowerCase();
+
+  filteredProductsForCategory(group: { id: string; products: Product[] }): Product[] {
+    const term = (this.categoryProductSearch[group.id] ?? '').trim().toLocaleLowerCase('es');
+    if (!term) return group.products;
+    return group.products.filter((product) => product.name.toLocaleLowerCase('es').includes(term));
   }
-  private isAlcohol(item: any): boolean {
-    const name = this.categoryName(item?.product);
-    return name.includes('alcohol') || name.includes('alcoh');
+
+  async addProductFromCategory(categoryId: string): Promise<void> {
+    if (!this.canManageOrders) return;
+    const productId = this.categoryProductSelection[categoryId] ?? '';
+    const quantity = Math.max(1, Math.floor(Number(this.categoryProductQuantity[categoryId] ?? 1)));
+    const added = await this.addProductToOrder(productId, quantity);
+    if (added) {
+      this.categoryProductSelection[categoryId] = '';
+      this.categoryProductQuantity[categoryId] = 1;
+      this.categoryProductSearch[categoryId] = '';
+    }
   }
-  private isSoftDrink(item: any): boolean {
-    const name = this.categoryName(item?.product);
-    return name.includes('refresco') || name.includes('refrescos') || name.includes('bebida');
+
+  private groupOrderItemsByCategory(items: Array<any>): Array<{ id: string; name: string; items: Array<any> }> {
+    const known = this.productCategories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      items: items.filter((item) => item?.product?.category_id === category.id),
+    })).filter((group) => group.items.length > 0);
+    const knownIds = new Set(this.productCategories.map((category) => category.id));
+    const uncategorized = items.filter((item) => !knownIds.has(item?.product?.category_id));
+    if (uncategorized.length) known.push({ id: 'uncategorized', name: 'Otros', items: uncategorized });
+    return known;
   }
   selectedOrderTarget: ClubTable | null = null;
+  observationDraft = '';
+  observationSaving = false;
+  observationMessage = '';
   showOrderDialog = false;
   private realtimeChannel: any;
   pendingMap = new Map<string, number>();
@@ -314,7 +349,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
           y: e.y,
           text: e.label ?? '',
           fill: selected ? '#6b4430' : '#2d211b',
-          fontSize: 22,
+          fontSize: e.font_size ?? 22,
           fontStyle: 'bold',
           padding: 6,
           draggable: this.canEditGeometry && this.tool === 'select',
@@ -703,6 +738,11 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.selectedElementId = null;
     this.selectedProductId = '';
     this.quantity = 1;
+    this.categoryProductSelection = {};
+    this.categoryProductSearch = {};
+    this.categoryProductQuantity = {};
+    this.observationDraft = target.observation ?? '';
+    this.observationMessage = '';
     await this.loadOrdersForTarget(target);
     this.showOrderDialog = true;
     this.render();
@@ -712,11 +752,39 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.selectedOrderTarget = null;
     this.selectedProductId = '';
     this.quantity = 1;
+    this.categoryProductSelection = {};
+    this.categoryProductSearch = {};
+    this.categoryProductQuantity = {};
+    this.observationDraft = '';
+    this.observationMessage = '';
   }
+
+  async saveObservation(): Promise<void> {
+    const target = this.selectedOrderTarget;
+    if (!target || !this.isAdmin || this.observationSaving) return;
+
+    const normalized = this.observationDraft.trim();
+    this.observationSaving = true;
+    this.observationMessage = '';
+    try {
+      await this.floors.setTableObservation(target.id, normalized || null);
+      target.observation = normalized || null;
+      target.updated_at = new Date().toISOString();
+      this.observationDraft = target.observation ?? '';
+      this.observationMessage = 'Observación guardada';
+    } catch (error) {
+      console.error('Error guardando observación:', error);
+      this.observationMessage = 'No se pudo guardar la observación';
+    } finally {
+      this.observationSaving = false;
+      this.cdr.detectChanges();
+    }
+  }
+
   async markAttended(attended: boolean) {
     const target = this.selectedOrderTarget;
     if (!target) return;
-    if (attended && this.orderItems().length === 0) {
+    if (attended && this.currentOrderItems.length === 0) {
       // No se puede marcar como atendida una mesa/reservado sin productos.
       return;
     }
@@ -729,7 +797,9 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.render();
     try {
       await this.floors.setTableAttended(target.id, attended);
-      this.closeOrderDialog();
+      await this.loadOrdersForTarget(target);
+      await this.refreshPendingMap();
+      this.render();
     } catch (error) {
       target.attended = previous;
       this.render();
@@ -762,9 +832,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
 
       this.orderItems.set([...result.items]);
 
-      this.selectedPending = this.orderItems()
-        .filter((item) => item.status === 'PENDING')
-        .reduce((total, item) => total + item.quantity, 0);
+      this.selectedPending = this.currentOrderItems.reduce((total, item) => total + item.quantity, 0);
 
       this.pendingChanged.emit(this.selectedPending);
 
@@ -929,7 +997,11 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
         const state = byId.get(table.id);
         if (!state) return;
         table.attended = state.attended;
+        table.observation = state.observation ?? null;
         table.updated_at = state.updated_at;
+        if (this.selectedOrderTarget?.id === table.id && !this.observationSaving) {
+          this.observationDraft = table.observation ?? '';
+        }
       };
 
       this.tables.forEach(apply);
@@ -1063,6 +1135,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       rotation: s.rotation,
       points: s.points,
       label: null,
+      font_size: null,
       z_index: this.elements.length,
       created_at: now,
       updated_at: now,
@@ -1094,6 +1167,32 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       this.draftLayer.draw();
     }
   }
+  get selectedTextElement(): FloorPlanElement | null {
+    if (!this.selectedElementId) return null;
+    const element = this.elements.find((item) => item.id === this.selectedElementId) ?? null;
+    return element?.kind === 'text' ? element : null;
+  }
+
+  get selectedTextFontSize(): number {
+    return this.selectedTextElement?.font_size ?? 22;
+  }
+
+  setSelectedTextFontSize(value: string | number | null | undefined) {
+    const element = this.selectedTextElement;
+    if (!element || !this.canEditGeometry) return;
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return;
+
+    const next = Math.max(8, Math.min(120, Math.round(parsed)));
+    if ((element.font_size ?? 22) === next) return;
+
+    element.font_size = next;
+    element.updated_at = new Date().toISOString();
+    this.pushHistory();
+    this.render();
+  }
+
   closeTextDialog() {
     this.showTextDialog = false;
     this.newText = '';
@@ -1116,6 +1215,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       rotation: 0,
       points: null,
       label: text,
+      font_size: 22,
       z_index: this.elements.length,
       created_at: now,
       updated_at: now,
@@ -1146,6 +1246,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       rotation: s.rotation,
       points: s.points,
       label: null,
+      font_size: null,
       z_index: this.elements.length,
       created_at: now,
       updated_at: now,
@@ -1199,6 +1300,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       created_at: now,
       updated_at: now,
       attended: false,
+      observation: null,
     };
     this.tables = [...this.tables, table];
     this.selectedTable = table;
@@ -1220,6 +1322,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       floor_plan_id: this.plan.id,
       type: 'RESERVED',
       attended: false,
+      observation: null,
       number: n,
       x: 300 + this.reserved.length * 20,
       y: 450 + this.reserved.length * 20,
@@ -1333,24 +1436,6 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       this.selectedProductId = '';
     }
   }
-  async addAlcoholItem() {
-    if (!this.canManageOrders) return;
-    const added = await this.addProductToOrder(this.selectedAlcoholProductId, this.alcoholQuantity);
-
-    if (added) {
-      this.alcoholQuantity = 1;
-      this.selectedAlcoholProductId = '';
-    }
-  }
-  async addSoftDrinkItem() {
-    if (!this.canManageOrders) return;
-    const added = await this.addProductToOrder(this.selectedSoftDrinkProductId, this.softDrinkQuantity);
-
-    if (added) {
-      this.softDrinkQuantity = 1;
-      this.selectedSoftDrinkProductId = '';
-    }
-  }
   /*
    * Añade (o incrementa, si ya existe en el pedido) un producto para la
    * mesa/reservado seleccionado. Se usa tanto desde el dropdown de
@@ -1400,15 +1485,11 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     const session = this.auth.session();
     if (!session) return;
     try {
+      if (item.attended === true || item.status !== 'PENDING') return;
       const patch: any = {
         quantity: nextQuantity,
         updated_at: new Date().toISOString(),
       };
-      if (item.status === 'PLACED') {
-        patch.status = 'PENDING';
-        patch.placed_by = null;
-        patch.placed_at = null;
-      }
       const { error } = await this.orders.db.client.from('order_items').update(patch).eq('id', item.id);
       if (error) throw error;
       await this.loadOrdersForTarget();
@@ -1420,7 +1501,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   }
 
   async removeOrderItem(item: any) {
-    if (!this.canManageOrders) return;
+    if (!this.canManageOrders || item.attended === true || item.status !== 'PENDING') return;
     const session = this.auth.session();
     if (!session) return;
     try {

@@ -103,6 +103,14 @@ export interface Database {
         Returns: undefined;
       };
 
+      set_table_observation: {
+        Args: {
+          p_table_id: string;
+          p_observation: string | null;
+        };
+        Returns: undefined;
+      };
+
       delete_table_with_orders: {
         Args: {
           p_table_id: string;

@@ -88,6 +88,7 @@ export class OrderService {
       .from('order_items')
       .update({
         status: 'PLACED',
+        attended: true,
         placed_by: userId,
         placed_at: new Date().toISOString(),
       })
