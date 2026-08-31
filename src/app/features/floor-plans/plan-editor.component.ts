@@ -832,6 +832,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
 
       // Cuando el backend confirma que ha quedado atendida, cerramos.
       if (attended) {
+        this.observationMessage = '';
         this.attendanceSaving = false;
         this.cdr.detectChanges();
         this.closeOrderDialog();

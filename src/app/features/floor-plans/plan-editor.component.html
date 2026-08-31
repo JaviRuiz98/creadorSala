@@ -113,7 +113,7 @@
               maxlength="1000"
               placeholder="Escribe aquí una observación para esta mesa o reservado..."></textarea>
             <div class="observation-actions">
-              @if (observationMessage) {
+              @if (observationMessage && selectedOrderTarget?.attended === false) {
                 <span class="observation-message">{{ observationMessage }}</span>
               }
               <ion-button
