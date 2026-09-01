@@ -7,7 +7,7 @@ import { FloorPlanService } from '../../core/services/floor-plan.service';
 import { ProductService } from '../../core/services/product.service';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/auth/auth.service';
-import type { ClubTable, FloorPlan, OrderItem, Product } from '../../core/models/models';
+import type { ClubTable, FloorPlan, OrderItem, Product, TableType } from '../../core/models/models';
 
 type AssignmentTarget = ClubTable & { displayName: string; kindLabel: string };
 type ListedItem = OrderItem & { product: Product };
@@ -33,6 +33,7 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
   dialogOpen = false;
   loading = false;
   saving = false;
+  creatingTarget: TableType | null = null;
   selectedTargetId = '';
   productQuantities: QuantityMap = {};
   errorMessage = '';
@@ -137,6 +138,22 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
     }
   }
 
+
+
+  async addTarget(type: TableType): Promise<void> {
+    if (!this.isAdmin || this.loading || this.creatingTarget) return;
+    this.creatingTarget = type;
+    this.errorMessage = '';
+    try {
+      await this.floors.createOperationalTarget(this.plan.id, type);
+      await this.load();
+    } catch (error) {
+      this.errorMessage = error instanceof Error ? error.message : 'No se pudo crear el elemento';
+    } finally {
+      this.creatingTarget = null;
+      this.cdr.detectChanges();
+    }
+  }
 
   selectTarget(target: ListedTarget): void {
     this.targetSelected.emit(target);

@@ -22,7 +22,7 @@
   <div class="nav-wrap">
     <ion-segment [value]="activeTab()" (ionChange)="activeTab.set($any($event.detail.value))">
       @if (isAdmin) {
-        <ion-segment-button value="planos"><ion-label>Planos</ion-label></ion-segment-button>
+        <ion-segment-button value="planos"><ion-label>Listas</ion-label></ion-segment-button>
       }
       <ion-segment-button value="operativo">
         <ion-label>Operativa</ion-label>
@@ -39,12 +39,12 @@
     <main class="page">
       <div class="page-head">
         <div>
-          <span class="eyebrow">DISEÑO DE SALA</span>
-          <h1>Planos</h1>
-          <p>Organiza las zonas, mesas y reservados de la sala.</p>
+          <span class="eyebrow">GESTIÓN DE SALA</span>
+          <h1>Listas</h1>
+          <p>Crea y organiza listas de mesas y reservados de la sala.</p>
         </div>
         <ion-button class="primary-button" (click)="openCreatePlanDialog()"
-          ><ion-icon name="add-outline" slot="start"></ion-icon>Nuevo plano</ion-button
+          ><ion-icon name="add-outline" slot="start"></ion-icon>Crear lista</ion-button
         >
       </div>
       <div class="plans">
@@ -53,12 +53,9 @@
             <div class="plan-preview">{{ plan.name.charAt(0).toUpperCase() }}</div>
             <div class="plan-info">
               <h2>{{ plan.name }}</h2>
-              <p>{{ plan.width }} × {{ plan.height }} · Plano de sala</p>
+              <p>Lista de mesas y reservados</p>
             </div>
             <div class="plan-actions">
-              <ion-button size="small" fill="outline" (click)="$event.stopPropagation(); openEditor(plan)"
-                ><ion-icon name="settings-outline" slot="start"></ion-icon>Editar</ion-button
-              >
               <ion-button size="small" fill="outline" (click)="$event.stopPropagation(); openRenamePlanDialog(plan)">Nombre</ion-button>
               <ion-button size="small" fill="outline" (click)="$event.stopPropagation(); askDuplicate(plan)"
                 ><ion-icon name="copy-outline" slot="start"></ion-icon>Copiar</ion-button
@@ -71,9 +68,9 @@
         } @empty {
           <div class="empty">
             <div>▧</div>
-            <h2>Aún no hay planos</h2>
-            <p>Crea el primer plano de la sala para empezar.</p>
-            <ion-button class="primary-button" (click)="openCreatePlanDialog()">Crear plano</ion-button>
+            <h2>Aún no hay listas</h2>
+            <p>Crea la primera lista de mesas y reservados para empezar.</p>
+            <ion-button class="primary-button" (click)="openCreatePlanDialog()">Crear lista</ion-button>
           </div>
         }
       </div>
@@ -88,7 +85,7 @@
         </div>
         <div class="select-actions">
           <ion-select
-            label="Plano"
+            label="Lista"
             labelPlacement="stacked"
             [value]="selectedPlan()?.id"
             (ionChange)="openPlanById($any($event.detail.value))"
@@ -97,11 +94,6 @@
               <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option>
             }
           </ion-select>
-          @if (isAdmin) {
-            <ion-button fill="outline" class="secondary-button" (click)="toggleEditorMode()">{{
-              editorMode() === 'editor' ? 'Ver plano' : 'Editar plano'
-            }}</ion-button>
-          }
         </div>
       </div>
 
@@ -125,8 +117,8 @@
       } @else {
         <div class="empty">
           <div>◫</div>
-          <h2>Selecciona un plano</h2>
-          <p>Crea o selecciona un plano para comenzar.</p>
+          <h2>Selecciona una lista</h2>
+          <p>Crea o selecciona una lista para comenzar.</p>
         </div>
       }
     </main>
@@ -242,15 +234,15 @@
     <div class="plan-dialog">
       <div class="dialog-header">
         <div>
-          <span class="dialog-eyebrow">NUEVO PLANO</span>
-          <h2>Crear plano</h2>
-          <p>Añade un nombre para identificar este plano.</p>
+          <span class="dialog-eyebrow">NUEVA LISTA</span>
+          <h2>Crear lista</h2>
+          <p>Añade un nombre para identificar esta lista.</p>
         </div>
         <button type="button" class="dialog-close" (click)="closeCreatePlanDialog()"><ion-icon name="close-outline"></ion-icon></button>
       </div>
       <div class="dialog-body">
         <ion-input
-          label="Nombre del plano"
+          label="Nombre de la lista"
           labelPlacement="stacked"
           fill="outline"
           placeholder="Ej. Sala principal"
@@ -260,7 +252,7 @@
       </div>
       <div class="dialog-actions">
         <ion-button fill="outline" class="secondary-button" (click)="closeCreatePlanDialog()">Cancelar</ion-button
-        ><ion-button class="primary-button" [disabled]="!newPlanName.trim()" (click)="createPlan()">Crear plano</ion-button>
+        ><ion-button class="primary-button" [disabled]="!newPlanName.trim()" (click)="createPlan()">Crear lista</ion-button>
       </div>
     </div>
   </ng-template>
@@ -349,9 +341,9 @@
     <div class="plan-dialog confirm-dialog">
       <div class="dialog-header">
         <div>
-          <span class="dialog-eyebrow">COPIAR PLANO</span>
+          <span class="dialog-eyebrow">COPIAR LISTA</span>
           <h2>Copiar «{{ planToCopy()?.name }}»</h2>
-          <p>Se creará un plano idéntico e independiente. Indica el nombre de la nueva copia.</p>
+          <p>Se creará una lista idéntica e independiente. Indica el nombre de la nueva copia.</p>
         </div>
       </div>
       <div class="dialog-body">
@@ -370,13 +362,13 @@
     <div class="plan-dialog">
       <div class="dialog-header">
         <div>
-          <span class="dialog-eyebrow">EDITAR PLANO</span>
+          <span class="dialog-eyebrow">EDITAR LISTA</span>
           <h2>Cambiar nombre</h2>
-          <p>Modifica el nombre con el que aparecerá este diseño en el listado.</p>
+          <p>Modifica el nombre con el que aparecerá esta lista.</p>
         </div>
       </div>
       <div class="dialog-body">
-        <ion-input label="Nombre del diseño" labelPlacement="stacked" fill="outline" [(ngModel)]="renamePlanName" (keydown.enter)="confirmRenamePlan()"></ion-input>
+        <ion-input label="Nombre de la lista" labelPlacement="stacked" fill="outline" [(ngModel)]="renamePlanName" (keydown.enter)="confirmRenamePlan()"></ion-input>
       </div>
       <div class="dialog-actions">
         <ion-button fill="outline" class="secondary-button" (click)="closeRenamePlanDialog()">Cancelar</ion-button>
@@ -392,9 +384,9 @@
       <div class="danger-symbol">!</div>
       <div class="dialog-header alert-header">
         <div>
-          <span class="dialog-eyebrow">ELIMINAR PLANO</span>
+          <span class="dialog-eyebrow">ELIMINAR LISTA</span>
           <h2>¿Eliminar «{{ planToDelete()?.name }}»?</h2>
-          <p>Esta acción eliminará el plano de forma definitiva.</p>
+          <p>Esta acción eliminará la lista de forma definitiva.</p>
         </div>
       </div>
       <div class="dialog-actions">

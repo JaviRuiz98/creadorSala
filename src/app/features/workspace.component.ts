@@ -200,7 +200,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   get activeLabel(): string {
-    return this.activeTab() === 'planos' ? 'Planos' : this.activeTab() === 'operativo' ? 'Operativa' : 'Productos';
+    return this.activeTab() === 'planos' ? 'Listas' : this.activeTab() === 'operativo' ? 'Operativa' : 'Productos';
   }
   get isAdmin(): boolean {
     return this.auth.hasRole('ADMIN');
@@ -236,9 +236,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.categories.set(await this.product.categories());
       this.products.set(await this.product.products());
       if (this.isAdmin) {
-        // Un ADMIN siempre entra por la pantalla de listado de planos.
+        // Un ADMIN siempre entra por la pantalla de listas.
         this.activeTab.set('planos');
-        this.editorMode.set('editor');
+        this.editorMode.set('operativo');
         this.selectedPlan.set(null);
       } else {
         this.activeTab.set('operativo');
@@ -401,12 +401,12 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       const plan = await this.floors.create(name, 2000, 1200, session.user.id);
       this.plans.update((current) => [...current, plan]);
       this.selectedPlan.set(plan);
-      this.editorMode.set('editor');
+      this.editorMode.set('operativo');
       this.activeTab.set('operativo');
       this.closeCreatePlanDialog();
-      this.toast.set('Plano creado correctamente');
+      this.toast.set('Lista creada correctamente');
     } catch (error) {
-      this.toast.set(error instanceof Error ? error.message : 'No se pudo crear el plano');
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo crear la lista');
     }
   }
 
@@ -448,9 +448,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       const copy = await this.duplication.duplicate(plan, session.user.id, name);
       this.plans.update((current) => [...current, copy].sort((a, b) => a.name.localeCompare(b.name)));
       this.closeCopyDialog();
-      this.toast.set('Plano copiado correctamente');
+      this.toast.set('Lista copiada correctamente');
     } catch (error) {
-      this.toast.set(error instanceof Error ? error.message : 'No se pudo copiar el plano');
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo copiar la lista');
     }
   }
 
@@ -476,7 +476,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.plans.update((current) => current.map((item) => item.id === plan.id ? { ...item, name } : item).sort((a, b) => a.name.localeCompare(b.name)));
       if (this.selectedPlan()?.id === plan.id) this.selectedPlan.set({ ...this.selectedPlan()!, name });
       this.closeRenamePlanDialog();
-      this.toast.set('Nombre del plano actualizado');
+      this.toast.set('Nombre de la lista actualizado');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'No se pudo cambiar el nombre');
     }
@@ -507,7 +507,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.plans.update((current) => current.filter((item) => item.id !== plan.id));
       if (this.selectedPlan()?.id === plan.id) this.selectedPlan.set(null);
       this.closeDeletePlanDialog();
-      this.toast.set('Plano eliminado');
+      this.toast.set('Lista eliminada');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'No se pudo eliminar');
     }

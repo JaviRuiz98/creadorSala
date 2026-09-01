@@ -75,3 +75,13 @@
   .product-panel { border-radius:14px; }
   .target-card { padding:15px; }
 }
+
+
+.list-create-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.target-create-button { --border-color:#b9947f; --color:#65412e; --border-radius:10px; font-weight:800; }
+.target-create-button ion-spinner { width:18px; height:18px; }
+@media(max-width:600px) {
+  .list-create-actions { display:grid; grid-template-columns:1fr 1fr; }
+  .list-create-actions .add-button { grid-column:1 / -1; }
+  .list-create-actions ion-button { width:100%; margin:0; }
+}

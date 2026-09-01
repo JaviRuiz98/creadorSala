@@ -186,6 +186,36 @@ export class FloorPlanService {
     if (error) throw error;
   }
 
+
+  async createOperationalTarget(planId: string, type: 'TABLE' | 'RESERVED'): Promise<ClubTable> {
+    const { data: existing, error: existingError } = await this.db.client
+      .from('tables')
+      .select('number')
+      .eq('floor_plan_id', planId)
+      .order('number', { ascending: false })
+      .limit(1);
+
+    if (existingError) throw existingError;
+
+    const nextNumber = ((existing?.[0]?.number as number | undefined) ?? 0) + 1;
+    const row = {
+      floor_plan_id: planId,
+      type,
+      number: nextNumber,
+      x: 100,
+      y: 100 + nextNumber * 10,
+      width: 100,
+      height: 100,
+      rotation: 0,
+      shape: type === 'RESERVED' ? 'rectangle' : 'circle',
+      attended: true,
+    };
+
+    const { data, error } = await this.db.client.from('tables').insert(row).select('*').single();
+    if (error) throw error;
+    return data as ClubTable;
+  }
+
   async setLocked(planId: string, locked: boolean): Promise<void> {
     const { error } = await this.db.client.from('floor_plans').update({ is_locked: locked }).eq('id', planId);
     if (error) throw error;

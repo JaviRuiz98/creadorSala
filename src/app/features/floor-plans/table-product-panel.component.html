@@ -3,12 +3,20 @@
         <div>
           <span class="eyebrow">OPERATIVA</span>
           <h2>Mesas y reservados</h2>
-          <p>{{ listedTargets.length }} elementos en el plano</p>
+          <p>{{ listedTargets.length }} elementos en la lista</p>
         </div>
         @if (isAdmin) {
-          <ion-button class="add-button" (click)="openDialog()" [disabled]="loading || availableTargets.length === 0">
-            + Agregar producto
-          </ion-button>
+          <div class="list-create-actions">
+            <ion-button fill="outline" class="target-create-button" (click)="addTarget('TABLE')" [disabled]="loading || !!creatingTarget">
+              @if (creatingTarget === 'TABLE') { <ion-spinner name="crescent"></ion-spinner> } @else { + Mesa }
+            </ion-button>
+            <ion-button fill="outline" class="target-create-button" (click)="addTarget('RESERVED')" [disabled]="loading || !!creatingTarget">
+              @if (creatingTarget === 'RESERVED') { <ion-spinner name="crescent"></ion-spinner> } @else { + Reservado }
+            </ion-button>
+            <ion-button class="add-button" (click)="openDialog()" [disabled]="loading || availableTargets.length === 0">
+              + Agregar producto
+            </ion-button>
+          </div>
         }
       </div>
 
