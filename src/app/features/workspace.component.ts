@@ -75,6 +75,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   @ViewChild(PlanEditorComponent) private planEditor?: PlanEditorComponent;
   activeTab = signal<'planos' | 'operativo' | 'productos'>('planos');
   editorMode = signal<'editor' | 'operativo'>('editor');
+  showMap = signal(true);
   plans = signal<FloorPlan[]>([]);
   selectedPlan = signal<FloorPlan | null>(null);
   categories = signal<ProductCategory[]>([]);
@@ -200,7 +201,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   get activeLabel(): string {
-    return this.activeTab() === 'planos' ? 'Listas' : this.activeTab() === 'operativo' ? 'Operativa' : 'Productos';
+    return this.activeTab() === 'planos' ? 'Planos' : this.activeTab() === 'operativo' ? 'Operativa' : 'Productos';
   }
   get isAdmin(): boolean {
     return this.auth.hasRole('ADMIN');
@@ -236,13 +237,15 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.categories.set(await this.product.categories());
       this.products.set(await this.product.products());
       if (this.isAdmin) {
-        // Un ADMIN siempre entra por la pantalla de listas.
+        // Un ADMIN siempre entra por la pantalla de planos.
         this.activeTab.set('planos');
         this.editorMode.set('operativo');
+        this.showMap.set(true);
         this.selectedPlan.set(null);
       } else {
         this.activeTab.set('operativo');
         this.editorMode.set('operativo');
+        this.showMap.set(false);
         if (this.plans().length) this.selectedPlan.set(this.plans()[0]);
         this.userOrderChannel = this.notifications.subscribeToNewOrderItems(
           () => {
@@ -294,11 +297,19 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         return;
       }
       this.editorMode.set('operativo');
+      this.showMap.set(true);
       return;
     }
 
     this.editorMode.set('editor');
+    this.showMap.set(true);
   }
+
+  toggleMapVisibility(): void {
+    if (!this.isAdmin || this.editorMode() !== 'operativo') return;
+    this.showMap.update((visible) => !visible);
+  }
+
   openCreatePlanDialog(): void {
     this.newPlanName = '';
     this.createPlanDialog.set(true);
@@ -401,24 +412,27 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       const plan = await this.floors.create(name, 2000, 1200, session.user.id);
       this.plans.update((current) => [...current, plan]);
       this.selectedPlan.set(plan);
-      this.editorMode.set('operativo');
+      this.editorMode.set('editor');
+      this.showMap.set(true);
       this.activeTab.set('operativo');
       this.closeCreatePlanDialog();
-      this.toast.set('Lista creada correctamente');
+      this.toast.set('Plano creado correctamente');
     } catch (error) {
-      this.toast.set(error instanceof Error ? error.message : 'No se pudo crear la lista');
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo crear el plano');
     }
   }
 
   openPlan(plan: FloorPlan): void {
     this.selectedPlan.set(plan);
     this.editorMode.set('operativo');
+    this.showMap.set(this.isAdmin);
     this.activeTab.set('operativo');
   }
   openEditor(plan: FloorPlan): void {
     if (!this.isAdmin) return;
     this.selectedPlan.set(plan);
     this.editorMode.set('editor');
+    this.showMap.set(true);
     this.activeTab.set('operativo');
   }
   openPlanById(id: string): void {
@@ -448,9 +462,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       const copy = await this.duplication.duplicate(plan, session.user.id, name);
       this.plans.update((current) => [...current, copy].sort((a, b) => a.name.localeCompare(b.name)));
       this.closeCopyDialog();
-      this.toast.set('Lista copiada correctamente');
+      this.toast.set('Plano copiado correctamente');
     } catch (error) {
-      this.toast.set(error instanceof Error ? error.message : 'No se pudo copiar la lista');
+      this.toast.set(error instanceof Error ? error.message : 'No se pudo copiar el plano');
     }
   }
 
@@ -476,7 +490,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.plans.update((current) => current.map((item) => item.id === plan.id ? { ...item, name } : item).sort((a, b) => a.name.localeCompare(b.name)));
       if (this.selectedPlan()?.id === plan.id) this.selectedPlan.set({ ...this.selectedPlan()!, name });
       this.closeRenamePlanDialog();
-      this.toast.set('Nombre de la lista actualizado');
+      this.toast.set('Nombre del plano actualizado');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'No se pudo cambiar el nombre');
     }
@@ -507,7 +521,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.plans.update((current) => current.filter((item) => item.id !== plan.id));
       if (this.selectedPlan()?.id === plan.id) this.selectedPlan.set(null);
       this.closeDeletePlanDialog();
-      this.toast.set('Lista eliminada');
+      this.toast.set('Plano eliminado');
     } catch (error) {
       this.toast.set(error instanceof Error ? error.message : 'No se pudo eliminar');
     }
