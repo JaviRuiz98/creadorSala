@@ -84,7 +84,7 @@
         <div>
           <span class="eyebrow">OPERATIVA</span>
           <h1>Mesas, reservados y productos</h1>
-          <p>El plano queda a la izquierda y el control de bebidas a la derecha.</p>
+          <p>Pulsa una mesa o reservado para abrir su operativa.</p>
         </div>
         <div class="select-actions">
           <ion-select
@@ -106,12 +106,20 @@
       </div>
 
       @if (selectedPlan()) {
-        <div class="operative-layout" [class.editor-layout]="editorMode() === 'editor'">
-          <div class="plan-column">
-            <app-plan-editor [plan]="selectedPlan()!" [mode]="editorMode()" (pendingChanged)="pendingCount.set($event)"></app-plan-editor>
+        <div class="operative-layout" [class.editor-layout]="editorMode() === 'editor'" [class.list-only]="editorMode() === 'operativo'">
+          <div class="plan-column" [class.dialog-host-only]="editorMode() === 'operativo'">
+            <app-plan-editor
+              [plan]="selectedPlan()!"
+              [mode]="editorMode()"
+              [hideSurface]="editorMode() === 'operativo'"
+              (pendingChanged)="pendingCount.set($event)">
+            </app-plan-editor>
           </div>
           @if (editorMode() === 'operativo') {
-            <app-table-product-panel [plan]="selectedPlan()!"></app-table-product-panel>
+            <app-table-product-panel
+              [plan]="selectedPlan()!"
+              (targetSelected)="openOperationalTarget($event)">
+            </app-table-product-panel>
           }
         </div>
       } @else {

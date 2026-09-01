@@ -20,7 +20,7 @@
             <section class="target-group urgent-group">
               <h3 class="group-title urgent-title">PENDIENTES</h3>
               @for (target of pendingTargets; track target.id) {
-                <article class="target-card pending">
+                <button type="button" class="target-card pending target-button" (click)="selectTarget(target)">
                   <div class="target-title-row">
                     <div><span class="kind">{{ target.kindLabel }}</span><strong>{{ target.displayName }}</strong></div>
                     <span class="status-dot red"></span>
@@ -30,7 +30,7 @@
                       <div class="assigned-item"><span>{{ item.product.name }}</span><strong>x{{ item.quantity }}</strong></div>
                     }
                   </div>
-                </article>
+                </button>
               }
             </section>
           }
@@ -38,7 +38,7 @@
           <section class="target-group">
             <h3 class="group-title">Mesas:</h3>
             @for (target of attendedTables; track target.id) {
-              <article class="target-card" [class.attended]="target.items.length > 0 && target.attended">
+              <button type="button" class="target-card target-button" [class.attended]="target.items.length > 0 && target.attended" (click)="selectTarget(target)">
                 <div class="target-title-row">
                   <div><span class="kind">MESA</span><strong>{{ target.displayName }}</strong></div>
                   @if (target.items.length > 0 && target.attended) { <span class="status-dot green"></span> }
@@ -50,14 +50,14 @@
                     }
                   </div>
                 } @else { <div class="no-items">Sin productos atendidos</div> }
-              </article>
+              </button>
             } @empty { <div class="no-items group-empty">No hay mesas.</div> }
           </section>
 
           <section class="target-group">
             <h3 class="group-title">Reservados:</h3>
             @for (target of attendedReserved; track target.id) {
-              <article class="target-card" [class.attended]="target.items.length > 0 && target.attended">
+              <button type="button" class="target-card target-button" [class.attended]="target.items.length > 0 && target.attended" (click)="selectTarget(target)">
                 <div class="target-title-row">
                   <div><span class="kind">RESERVADO</span><strong>{{ target.displayName }}</strong></div>
                   @if (target.items.length > 0 && target.attended) { <span class="status-dot green"></span> }
@@ -69,7 +69,7 @@
                     }
                   </div>
                 } @else { <div class="no-items">Sin productos atendidos</div> }
-              </article>
+              </button>
             } @empty { <div class="no-items group-empty">No hay reservados.</div> }
           </section>
         </div>

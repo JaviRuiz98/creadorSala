@@ -37,3 +37,8 @@ ion-button { --border-radius:10px; --box-shadow:none; font-weight:700; text-tran
 .plan-actions ion-button { max-width:100%; }
 
 @media(max-width:600px){.category-title-row,.product-row{align-items:stretch;flex-direction:column}.catalog-actions{justify-content:flex-start}.catalog-actions ion-button{flex:1 1 auto}}
+
+/* Operativa sin mapa: el editor queda montado únicamente como host del diálogo global. */
+.operative-layout.list-only { display:block; }
+.operative-layout.list-only .dialog-host-only { width:0; height:0; overflow:visible; }
+.operative-layout.list-only app-table-product-panel { display:block; width:100%; }

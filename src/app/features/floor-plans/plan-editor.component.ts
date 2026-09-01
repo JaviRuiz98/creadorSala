@@ -38,6 +38,8 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   plan!: FloorPlan;
   @Input()
   mode: 'editor' | 'operativo' = 'editor';
+  @Input()
+  hideSurface = false;
   @Output()
   pendingChanged = new EventEmitter<number>();
   @ViewChild('container', { static: true })
@@ -752,6 +754,10 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.activeEndpoint = null;
     this.render();
   }
+  async openOperationalTarget(target: ClubTable): Promise<void> {
+    await this.openOrderDialog(target);
+  }
+
   private async openOrderDialog(target: ClubTable) {
     if (this.mode !== 'operativo') {
       return;

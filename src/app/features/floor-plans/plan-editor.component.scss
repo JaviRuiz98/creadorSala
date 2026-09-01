@@ -1307,3 +1307,8 @@
 @media (prefers-reduced-motion: reduce){
   .attendance-spinner{animation-duration:1.4s}
 }
+
+/* Mantiene el componente vivo para reutilizar el diálogo de mesa/reservado sin mostrar el plano. */
+.editor-shell.surface-hidden { min-height:0 !important; height:0 !important; overflow:visible; border:0 !important; background:transparent !important; box-shadow:none !important; }
+.editor-shell.surface-hidden > .editor-toolbar,
+.editor-shell.surface-hidden > .canvas-area { display:none !important; }

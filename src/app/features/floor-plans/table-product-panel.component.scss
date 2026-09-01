@@ -45,3 +45,33 @@
     .urgent-title { color:#b22f39; letter-spacing:.1em; font-size:11px; }
     .urgent-group { padding-bottom:2px; }
     .group-empty { padding:8px 3px; }
+
+
+/* El listado operativo funciona como selector táctil de mesas/reservados. */
+:host { min-width:0; height:auto; }
+.product-panel { min-height:0; height:auto; border-left:0; border:1px solid #e4d7ce; border-radius:18px; overflow:visible; }
+.target-list { overflow:visible; }
+.target-group { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+.target-group + .target-group { margin-top:14px; padding-top:16px; }
+.group-title { grid-column:1 / -1; }
+.target-button {
+  appearance:none;
+  -webkit-appearance:none;
+  -webkit-tap-highlight-color:transparent;
+  width:100%;
+  text-align:left;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.target-button:hover { box-shadow:0 8px 22px rgba(70,43,29,.10); }
+.target-button:active { transform:scale(.985); }
+.target-button:focus { outline:none; }
+.target-button:focus-visible { outline:2px solid #8f654d; outline-offset:2px; }
+@media(max-width:600px) {
+  .target-group { grid-template-columns:1fr; }
+  .product-panel { border-radius:14px; }
+  .target-card { padding:15px; }
+}

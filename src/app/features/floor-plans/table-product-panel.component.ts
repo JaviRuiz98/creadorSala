@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IonButton, IonSelect, IonSelectOption, IonSpinner } from '@ionic/angular/standalone';
 
@@ -25,6 +25,7 @@ type ProductGroup = { id: string; name: string; products: Product[] };
 })
 export class TableProductPanelComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) plan!: FloorPlan;
+  @Output() targetSelected = new EventEmitter<ClubTable>();
 
   listedTargets: ListedTarget[] = [];
   availableTargets: AssignmentTarget[] = [];
@@ -134,6 +135,11 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
         this.cdr.detectChanges();
       }
     }
+  }
+
+
+  selectTarget(target: ListedTarget): void {
+    this.targetSelected.emit(target);
   }
 
   openDialog(): void {

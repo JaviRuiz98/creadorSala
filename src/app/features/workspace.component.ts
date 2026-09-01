@@ -41,7 +41,7 @@ import { OrderService } from '../core/services/order.service';
 import { UserAdminService } from '../core/services/user-admin.service';
 import { PlanDuplicationService } from '../core/services/plan-duplication.service';
 import { OrderNotificationService } from '../core/services/order-notification.service';
-import type { FloorPlan, Product, ProductCategory, Role } from '../core/models/models';
+import type { ClubTable, FloorPlan, Product, ProductCategory, Role } from '../core/models/models';
 import { PlanEditorComponent } from './floor-plans/plan-editor.component';
 import { TableProductPanelComponent } from './floor-plans/table-product-panel.component';
 
@@ -277,6 +277,10 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     // El aviso visual de nuevos pedidos se gestiona exclusivamente
     // mediante OrderNotificationService cuando se inserta un order_item.
     return;
+  }
+
+  openOperationalTarget(target: ClubTable): void {
+    void this.planEditor?.openOperationalTarget(target);
   }
 
   async toggleEditorMode(): Promise<void> {
