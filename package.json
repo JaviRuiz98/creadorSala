@@ -20,7 +20,8 @@
     "ios:add": "npx cap add ios",
     "ios:open": "npm run native:build && npx cap open ios",
     "ios:run": "npm run native:build && npx cap run ios",
-    "native:assets": "npx capacitor-assets generate --iconBackgroundColor '#563522' --iconBackgroundColorDark '#101114' --splashBackgroundColor '#563522' --splashBackgroundColorDark '#101114'"
+    "native:assets": "npx capacitor-assets generate --iconBackgroundColor '#563522' --iconBackgroundColorDark '#101114' --splashBackgroundColor '#563522' --splashBackgroundColorDark '#101114'",
+    "native:update": "npm run native:build && npm run native:sync && npm run native:assets"
   },
   "dependencies": {
     "@angular/animations": "^20.3.28",

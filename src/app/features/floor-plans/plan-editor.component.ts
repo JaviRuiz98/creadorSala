@@ -45,6 +45,13 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   private stage!: Konva.Stage;
   private resizeObserver: ResizeObserver | null = null;
   private resizeFrame: number | null = null;
+  private readonly absoluteMinZoom = 0.08;
+  private readonly defaultMinZoom = 0.35;
+  private readonly maxZoom = 2.5;
+  minZoom = this.defaultMinZoom;
+  private initialViewPending = true;
+  private pinchLastDistance = 0;
+  private pinchLastCenter: { x: number; y: number } | null = null;
   private layer!: Konva.Layer;
   private draftLayer!: Konva.Layer;
   private drawingShape: Konva.Line | null = null;
@@ -186,6 +193,16 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     return this.isAdmin && this.mode === 'editor' && !this.plan?.is_locked;
   }
 
+  get canZoomOut(): boolean {
+    if (!this.stage) return false;
+    return this.stage.scaleX() > this.minZoom + 0.001;
+  }
+
+  get canZoomIn(): boolean {
+    if (!this.stage) return true;
+    return this.stage.scaleX() < this.maxZoom - 0.001;
+  }
+
   get toolLabel(): string {
     if (this.tool === 'draw') {
       return 'Dibujar paredes';
@@ -259,6 +276,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     e.updated_at = new Date().toISOString();
   }
   private async load() {
+    this.initialViewPending = true;
     const snap = await this.floors.load(this.plan.id);
     this.elements = snap.elements;
     this.tables = (snap.tables ?? []).filter((t) => t.type !== 'RESERVED');
@@ -299,7 +317,7 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       this.stage.destroy();
     }
     const el = this.container.nativeElement;
-    const width = Math.max(el.clientWidth, 600);
+    const width = Math.max(el.clientWidth, 1);
     const height = Math.max(el.clientHeight, 500);
     this.stage = new Konva.Stage({
       container: el,
@@ -316,7 +334,9 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
       e.evt.preventDefault();
       this.zoomAtPointer(e.evt as WheelEvent, e.evt.deltaY < 0 ? 0.1 : -0.1);
     });
+    this.installTouchNavigation();
     this.render();
+    requestAnimationFrame(() => this.fitInitialView());
   }
   private observeStageSize(el: HTMLDivElement) {
     this.resizeObserver?.disconnect();
@@ -1386,42 +1406,128 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
     this.setTool(this.tool === 'pan' ? 'select' : 'pan');
   }
   zoom(delta: number) {
-    if (!this.stage) {
-      return;
-    }
-    const old = this.stage.scaleX();
-    const next = Math.min(2.5, Math.max(0.35, old + delta));
-    this.stage.scale({
-      x: next,
-      y: next,
-    });
-    this.render();
-  }
-  private zoomAtPointer(event: WheelEvent, delta: number) {
-    if (!this.stage) {
-      return;
-    }
+    if (!this.stage) return;
     const oldScale = this.stage.scaleX();
-    const pointer = this.stage.getPointerPosition();
-    if (!pointer) {
-      this.zoom(delta);
-      return;
-    }
-    const newScale = Math.min(2.5, Math.max(0.35, oldScale + delta));
-    const mousePointTo = {
-      x: (pointer.x - this.stage.x()) / oldScale,
-      y: (pointer.y - this.stage.y()) / oldScale,
-    };
-    this.stage.scale({
-      x: newScale,
-      y: newScale,
-    });
-    this.stage.position({
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    });
-    this.render();
+    const nextScale = this.clampZoom(oldScale + delta);
+    if (Math.abs(nextScale - oldScale) < 0.0001) return;
+
+    const center = { x: this.stage.width() / 2, y: this.stage.height() / 2 };
+    this.zoomAroundPoint(center, nextScale);
+    this.cdr.detectChanges();
   }
+
+  private zoomAtPointer(event: WheelEvent, delta: number) {
+    if (!this.stage) return;
+    const oldScale = this.stage.scaleX();
+    const newScale = this.clampZoom(oldScale + delta);
+    if (Math.abs(newScale - oldScale) < 0.0001) return;
+    const pointer = this.stage.getPointerPosition() ?? { x: this.stage.width() / 2, y: this.stage.height() / 2 };
+    this.zoomAroundPoint(pointer, newScale);
+    this.cdr.detectChanges();
+  }
+
+  private clampZoom(value: number): number {
+    return Math.min(this.maxZoom, Math.max(this.minZoom, value));
+  }
+
+  private zoomAroundPoint(point: { x: number; y: number }, newScale: number) {
+    if (!this.stage) return;
+    const oldScale = this.stage.scaleX() || 1;
+    const modelPoint = {
+      x: (point.x - this.stage.x()) / oldScale,
+      y: (point.y - this.stage.y()) / oldScale,
+    };
+    this.stage.scale({ x: newScale, y: newScale });
+    this.stage.position({
+      x: point.x - modelPoint.x * newScale,
+      y: point.y - modelPoint.y * newScale,
+    });
+    this.stage.batchDraw();
+  }
+
+  private fitInitialView() {
+    if (!this.stage || !this.initialViewPending) return;
+    this.initialViewPending = false;
+
+    const planWidth = Math.max(Number(this.plan?.width) || 0, this.contentExtent('x'), 1);
+    const planHeight = Math.max(Number(this.plan?.height) || 0, this.contentExtent('y'), 1);
+    const padding = 24;
+    const availableWidth = Math.max(1, this.stage.width() - padding * 2);
+    const availableHeight = Math.max(1, this.stage.height() - padding * 2);
+    const fitScale = Math.min(availableWidth / planWidth, availableHeight / planHeight);
+
+    this.minZoom = Math.max(this.absoluteMinZoom, Math.min(this.defaultMinZoom, fitScale));
+    this.stage.scale({ x: this.minZoom, y: this.minZoom });
+    this.stage.position({
+      x: (this.stage.width() - planWidth * this.minZoom) / 2,
+      y: (this.stage.height() - planHeight * this.minZoom) / 2,
+    });
+    this.stage.batchDraw();
+    this.cdr.detectChanges();
+  }
+
+  private contentExtent(axis: 'x' | 'y'): number {
+    let max = 0;
+    const update = (value: number) => {
+      if (Number.isFinite(value)) max = Math.max(max, value);
+    };
+
+    for (const item of [...this.tables, ...this.reserved]) {
+      update(axis === 'x' ? item.x + item.width : item.y + item.height);
+    }
+    for (const element of this.elements) {
+      update(axis === 'x' ? element.x + (element.width || 0) : element.y + (element.height || 0));
+      if (element.points?.length) {
+        for (let i = axis === 'x' ? 0 : 1; i < element.points.length; i += 2) {
+          update(element.points[i]);
+        }
+      }
+    }
+    return max;
+  }
+
+  private installTouchNavigation() {
+    if (!this.stage) return;
+
+    this.stage.on('touchmove.mobile-nav', (event) => {
+      const touches = (event.evt as TouchEvent).touches;
+      if (touches.length !== 2) return;
+      event.evt.preventDefault();
+      this.stage.stopDrag();
+
+      const rect = this.container.nativeElement.getBoundingClientRect();
+      const p1 = { x: touches[0].clientX - rect.left, y: touches[0].clientY - rect.top };
+      const p2 = { x: touches[1].clientX - rect.left, y: touches[1].clientY - rect.top };
+      const center = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
+      if (this.pinchLastDistance > 0 && this.pinchLastCenter) {
+        const oldScale = this.stage.scaleX() || 1;
+        const nextScale = this.clampZoom(oldScale * (distance / this.pinchLastDistance));
+        const modelPoint = {
+          x: (this.pinchLastCenter.x - this.stage.x()) / oldScale,
+          y: (this.pinchLastCenter.y - this.stage.y()) / oldScale,
+        };
+        this.stage.scale({ x: nextScale, y: nextScale });
+        this.stage.position({
+          x: center.x - modelPoint.x * nextScale,
+          y: center.y - modelPoint.y * nextScale,
+        });
+        this.stage.batchDraw();
+      }
+
+      this.pinchLastDistance = distance;
+      this.pinchLastCenter = center;
+    });
+
+    this.stage.on('touchend.mobile-nav touchcancel.mobile-nav', () => {
+      this.pinchLastDistance = 0;
+      this.pinchLastCenter = null;
+      this.stage.draggable(this.panMode);
+      this.cdr.detectChanges();
+    });
+  }
+
   pushHistory() {
     const snapshot: FloorSnapshot = {
       elements: structuredClone(this.elements),

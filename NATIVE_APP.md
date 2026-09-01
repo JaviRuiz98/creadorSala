@@ -58,3 +58,13 @@ Esto ejecuta el build de Angular y sincroniza la carpeta web con los proyectos n
 - Web output: `dist/discoteca/browser`
 
 El archivo `resources/icon.svg` sirve como fuente del icono. `@capacitor/assets` genera los tamaños nativos cuando existen las plataformas Android/iOS.
+
+## Actualizar iconos y cambios nativos
+
+Después de añadir Android/iOS por primera vez, ejecuta:
+
+`npm run native:update`
+
+Este comando compila Angular, sincroniza Capacitor y regenera los iconos nativos desde `resources/icon.png` / `resources/icon.svg`.
+
+Para que iOS muestre el icono de Sala Chocolatte en la pantalla de inicio, ejecuta `npm run native:assets` después de haber creado la carpeta `ios/`, y vuelve a compilar desde Xcode. En Android se aplica igual después de crear `android/`.

@@ -5,7 +5,7 @@
         <ion-button class="editor-button" size="small" [class.active]="tool === 'select'" (click)="setTool('select')">↖ Seleccionar</ion-button>
         <ion-button class="editor-button" size="small" [class.active]="tool === 'draw'" [disabled]="!canEditGeometry" (click)="setTool('draw')">✏️ Dibujar</ion-button>
         <ion-button class="editor-button" size="small" [class.active]="tool === 'text'" [disabled]="!canEditGeometry" (click)="setTool('text')">T Texto</ion-button>
-        <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ Pan</ion-button>
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ MOVER</ion-button>
       </div>
 
       <div class="tool-group">
@@ -17,8 +17,8 @@
         <ion-button class="editor-button reserved-button" size="small" (click)="addReserved()" [disabled]="!canEditGeometry">+ Reservado</ion-button>
         <ion-button class="editor-button icon-button" size="small" (click)="undo()" [disabled]="historyIndex < 1">↶</ion-button>
         <ion-button class="editor-button icon-button" size="small" (click)="redo()" [disabled]="historyIndex >= history.length - 1">↷</ion-button>
-        <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)">−</ion-button>
-        <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)">+</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)" [disabled]="!canZoomOut">−</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)" [disabled]="!canZoomIn">+</ion-button>
       </div>
 
       <span class="tool-status">
@@ -51,9 +51,9 @@
     } @else {
       <div class="tool-group">
         <ion-button class="editor-button" size="small" [class.active]="tool === 'select'" (click)="setTool('select')">↖ Seleccionar</ion-button>
-        <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ Pan</ion-button>
-        <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)">−</ion-button>
-        <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)">+</ion-button>
+        <ion-button class="editor-button" size="small" [class.active]="tool === 'pan'" (click)="setTool('pan')">✋ MOVER</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(-0.1)" [disabled]="!canZoomOut">−</ion-button>
+        <ion-button class="editor-button icon-button" size="small" (click)="zoom(0.1)" [disabled]="!canZoomIn">+</ion-button>
       </div>
     }
   </div>
