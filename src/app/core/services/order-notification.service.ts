@@ -4,22 +4,37 @@ import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class OrderNotificationService {
+  private lastOrderAlertAt = 0;
+  private lastObservationAlertAt = 0;
+
   constructor(private readonly db: SupabaseService) {}
 
   subscribeToNewOrderItems(onNewOrder: () => void, onObservationChange?: () => void): RealtimeChannel {
+    const emitOrder = () => {
+      const now = Date.now();
+      // Un mismo alta puede producir UPDATE/INSERT en order_items y, justo
+      // después, UPDATE de la mesa a attended=false. Evitamos doble aviso.
+      if (now - this.lastOrderAlertAt < 700) return;
+      this.lastOrderAlertAt = now;
+      onNewOrder();
+    };
+
+    const emitObservation = () => {
+      const now = Date.now();
+      if (now - this.lastObservationAlertAt < 700) return;
+      this.lastObservationAlertAt = now;
+      onObservationChange?.();
+    };
+
     return this.db.client
       .channel(`user-new-orders-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'order_items' },
         (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-          // Un producto nuevo puede llegar como INSERT o como UPDATE cuando
-          // ya existía en el pedido y se incrementa su cantidad. Solo avisamos
-          // cuando el resultado queda pendiente; los cambios a PLACED/CANCELLED
-          // no deben generar un aviso de pedido nuevo.
           const next = payload.new as Record<string, unknown> | undefined;
-          if (next?.['status'] === 'PENDING') {
-            onNewOrder();
+          if (next?.['status'] === 'PENDING' && next?.['attended'] !== true) {
+            emitOrder();
           }
         },
       )
@@ -27,12 +42,26 @@ export class OrderNotificationService {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'tables' },
         (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-          if (!onObservationChange) return;
           const previous = payload.old as Record<string, unknown> | undefined;
           const next = payload.new as Record<string, unknown> | undefined;
-          if (!previous || !next) return;
-          if (previous['observation'] !== next['observation']) {
-            onObservationChange();
+          if (!next) return;
+
+          const observationChanged = Boolean(
+            onObservationChange &&
+            previous &&
+            previous['observation'] !== next['observation'],
+          );
+
+          if (observationChanged) {
+            // Guardar una observación también deja la mesa pendiente, pero el
+            // usuario debe ver el aviso específico de OBSERVACIÓN, no dos avisos.
+            emitObservation();
+            return;
+          }
+
+          const becamePending = next['attended'] === false && previous?.['attended'] !== false;
+          if (becamePending) {
+            emitOrder();
           }
         },
       )
