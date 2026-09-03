@@ -113,8 +113,10 @@ export class PlanEditorComponent implements OnChanges, OnDestroy {
   get canSetAttendedStatus(): boolean {
     if (this.currentOrderItems.length > 0) return true;
 
-    const hasObservation = Boolean((this.selectedOrderTarget?.observation ?? '').trim());
-    return this.attendedOrderItems.length > 0 && hasObservation;
+    // Una observación pendiente también requiere atención aunque la mesa
+    // todavía no tenga productos asociados. Esto permite confirmar o
+    // mantener como pendiente una mesa/reservado creado solo con comentario.
+    return Boolean((this.selectedOrderTarget?.observation ?? '').trim());
   }
 
   get activeProducts(): Product[] {
