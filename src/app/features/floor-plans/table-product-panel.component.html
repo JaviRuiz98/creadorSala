@@ -33,11 +33,16 @@
                     <div><span class="kind">{{ target.kindLabel }}</span><strong>{{ target.displayName }}</strong></div>
                     <span class="status-dot red"></span>
                   </div>
-                  <div class="item-list">
-                    @for (item of currentItems(target); track item.id) {
-                      <div class="assigned-item"><span>{{ item.product.name }}</span><strong>x{{ item.quantity }}</strong></div>
-                    }
-                  </div>
+                  @if (hasObservation(target)) {
+                    <div class="pending-observation"><strong>Observación:</strong> {{ target.observation }}</div>
+                  }
+                  @if (currentItems(target).length > 0) {
+                    <div class="item-list">
+                      @for (item of currentItems(target); track item.id) {
+                        <div class="assigned-item"><span>{{ item.product.name }}</span><strong>x{{ item.quantity }}</strong></div>
+                      }
+                    </div>
+                  }
                 </button>
               }
             </section>

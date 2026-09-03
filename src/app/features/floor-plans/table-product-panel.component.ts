@@ -55,8 +55,12 @@ export class TableProductPanelComponent implements OnChanges, OnDestroy {
 
   get pendingTargets(): ListedTarget[] {
     return this.listedTargets
-      .filter((target) => target.items.length > 0 && !target.attended)
+      .filter((target) => !target.attended && (this.currentItems(target).length > 0 || this.hasObservation(target)))
       .sort((a, b) => a.type === b.type ? a.number - b.number : a.type === 'TABLE' ? -1 : 1);
+  }
+
+  hasObservation(target: ListedTarget): boolean {
+    return Boolean((target.observation ?? '').trim());
   }
 
   get attendedTables(): ListedTarget[] {

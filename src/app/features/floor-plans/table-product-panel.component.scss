@@ -85,3 +85,13 @@
   .list-create-actions .add-button { grid-column:1 / -1; }
   .list-create-actions ion-button { width:100%; margin:0; }
 }
+
+.pending-observation {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(159, 47, 58, 0.08);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  text-align: left;
+}
